@@ -122,8 +122,9 @@ Scheduling automation that eliminates email back-and-forth for investor meetings
 | **Calendly Standard** | $10/user/month[^lbh4u5][^g0nlcg] | **Cal.com** — Open-source Calendly alternative; full source access, self-hostable, identical feature set | $0 |
 | **Calendly Teams** | $16/user/month with routing/distribution[^lbh4u5] | **Easy!Appointments** — Self-hosted scheduling with Google Calendar/CalDAV sync, provider mgmt, email notifications, API | $0 |
 | **Calendly Enterprise** | From $15,000/yr (SAML SSO, advanced controls)[^7yw3a9] | **Cal.com (self-hosted Enterprise)** — Full enterprise feature set including SSO, SCIM, audit logs | $0 |
+| **Doodle Business** | ~$14.95/user/month (group find-a-time polls)[^doodle] | **Rallly** — Open-source Doodle alternative for group scheduling; modern Next.js, 10k+ GitHub stars. Different lane than Cal.com — covers IC scheduling, LP annual meeting coordination, partner offsites where 1:1 booking pages don't fit. | $0 |
 
-**Annual savings (15-person team):** $1.3k–$4k vs. Teams or Enterprise tiers.
+**Annual savings (15-person team):** $1.3k–$4k vs. Teams or Enterprise tiers. Add ~$2.7k/yr if replacing Doodle Business at the same scale.
 
 ### Database & Workflow Applications
 
@@ -261,6 +262,7 @@ Internal wikis and knowledge bases that preserve investment theses, due diligenc
 [^7yw3a9]: [Calendly vs Zoom Scheduler: Honest Comparison (2026)](https://prospeo.io/s/calendly-vs-zoom)
 [^lbh4u5]: [Calendly vs Zoom Scheduler: Full Comparison for 2026](https://zeeg.me/en/blog/post/calendly-vs-zoom-scheduler)
 [^g0nlcg]: [Calendly Pricing](https://calendly.com/pricing)
+[^doodle]: [Doodle Pricing — Business Plan](https://doodle.com/en/premium/)
 [^wv1771]: [The Open-Source Airtable Alternative: APITable, nocodb & ...](https://aitable.ai/blog/open-source-airtable-alternative/)
 [^fpdi0w]: [Confluence vs Notion Pricing 2026 | Features & Cost Comparison](https://www.docsie.io/blog/articles/confluence-vs-notion-pricing-comparison-2026/)
 [^m69w5r]: [Top Tableau competitors and alternatives to consider](https://www.thoughtspot.com/data-trends/business-intelligence/tableau-competitors)
