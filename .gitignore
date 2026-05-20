@@ -1,0 +1,39 @@
+# Client deployments — opaque working dirs, NOT part of the public marketing surface.
+# Each client's actual deployment (real .env, real domain, real DB credentials) lives here
+# but is intentionally not tracked. Reconstruct from core/ recipes + the client's backup.
+client-stacks/
+
+# Secrets — every tool under core/ has its own .env
+.env
+.env.local
+.env.*.local
+.secrets
+secrets/
+
+# Node / package managers
+node_modules
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Build / runtime
+dist
+build
+.next
+.turbo
+.cache
+
+# Docker / local data volumes
+docker-data
+.local-storage
+*.log
+
+# Railway / deploy ephemera
+deployment-info.txt
+.railway
+
+# Editor / OS
+.DS_Store
+.idea
+.vscode
+*.swp
