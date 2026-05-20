@@ -128,16 +128,15 @@ Scheduling automation that eliminates email back-and-forth for investor meetings
 
 ### Database & Workflow Applications
 
-No-code/low-code database platforms for custom deal pipelines, LP management dashboards, and investment committee workflows.
+Relational, no-code database platforms (Airtable-shape) for custom deal pipelines, LP management dashboards, and investment committee workflows. This is the spreadsheet-with-superpowers lane — Notion-style hybrid docs-and-DB tools sit in [Knowledge Management & Documentation](#knowledge-management--documentation) instead, where AppFlowy is the natural OSS counterpart.
 
 | Proprietary Vendor | Pricing | Self-Hosted Alternative | Licensing Cost |
 |---|---|---|---|
-| **Airtable Pro** | $20/user/month[^wv1771] | **NocoDB** — Turns any MySQL/PostgreSQL into Airtable-like UI; 56k+ GitHub stars, auto-generated REST APIs | $0 |
+| **Airtable Team** | $20/user/month[^wv1771] | **NocoDB** — Turns any MySQL/PostgreSQL into an Airtable-like UI; 56k+ GitHub stars, auto-generated REST APIs, multiple views | $0 |
 | **Airtable Business** | $45/user/month[^wv1771] | **Baserow** — Fast even at unlimited rows; Airtable-style interface, automation, dashboards, API integration | $0 |
-| **Notion Plus** | $10/user/month[^fpdi0w] | **NocoBase** — Broader low-code application framework; builds full custom business apps beyond just DB UI | $0 |
-| **Notion Business** | $20/user/month (includes AI)[^fpdi0w] | **Teable** — Modern spreadsheet-style open-source alternative with relational capabilities | $0 |
+| **Airtable Enterprise** | Custom pricing (typically $60+/user/month) | **Teable** — Modern spreadsheet-style open-source alternative with strong relational capabilities and a polished UI | $0 |
 
-**Annual savings (15-person team):** $2.4k–$7.5k depending on vendor tier replaced.
+**Annual savings (15-person team):** $3.6k–$8.1k depending on Airtable tier replaced.
 
 ### Business Intelligence & Analytics
 
