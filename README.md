@@ -2,9 +2,17 @@
 
 **A curated, deployable open-source tech stack a venture firm can self-host instead of paying $85k–$280k/yr in SaaS rent.**
 
-A typical 15-person VC firm spends about **$85,000/year** on Affinity + Visible + Slack + Zoom + Calendly + Airtable + Tableau + Notion + a per-deal VDR. A 50-person firm spends closer to **$278,000/year** once Salesforce Financial Services Cloud and enterprise tiers enter the picture. Every line item has a credible open-source alternative; the friction has historically been integration and deploy ergonomics, not capability.
+# Why lose so much money every year?
+
+> A typical 15-person VC could spend up to **$85,000/year** on Affinity + Visible + Slack + Zoom + Calendly + Airtable + Tableau + Notion + a per-deal VDR. 
+
+> A 50-person firm spends might spend closer to **$278,000/year** on the many tools that a firm of that size would need, at the larger, enterprise tier.
+
+Every line item now has a credible open-source alternative; the friction has historically been the _willingness to futz with it_ -- e.g. integration and deploy ergonomics, not intellectual ability or technical skill.
 
 This repo is the integration-and-deploy-ergonomics layer. Each tool under [`core/`](./core/) ships with a thin deploy wrapper (Dockerfile, Compose snippet, Railway / Fly template, env example) so a competent team can stand up the full stack in a long weekend instead of a long quarter.
+
+Setup and management available on request from [The Lossless Group](https://lossless.group)
 
 ---
 
@@ -152,7 +160,7 @@ Internal wikis and knowledge bases that preserve investment theses, due diligenc
 | **Confluence Standard** | $5.42/user/month (Rovo AI included)[^fpdi0w] | **Outline** — Modern, fast wiki with Slack-style editing, real-time collaboration, markdown-native | $0 |
 | **Confluence Premium** | $10.42/user/month[^fpdi0w] | **BookStack** — Self-hosted wiki with book/chapter/page hierarchy; ideal for organizing investment frameworks | $0 |
 | **Notion Plus** | $10/user/month[^fpdi0w] | **Wiki.js** — Modern open-source wiki; multiple auth options, beautiful UI, extensive plugin ecosystem | $0 |
-| **Notion Business** | $20/user/month (includes AI)[^fpdi0w] | **Docusaurus** — Documentation framework from Meta, optimized for versioned docs and technical content | $0 |
+| **Notion Business** | $20/user/month (includes AI)[^fpdi0w] | **AppFlowy** — The most Notion-shaped OSS option; docs + databases + AI in one app, 60k+ GitHub stars, native desktop clients, self-hostable via AppFlowy Cloud. Also covers Airtable-style database use cases. | $0 |
 
 **Annual savings (20-person team):** $1.3k–$4.2k; $4.1k–$10.8k for 50-person firm.
 
