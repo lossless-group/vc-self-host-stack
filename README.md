@@ -4,7 +4,7 @@
 
 # Why lose so much money every year?
 
-> A typical 15-person VC could spend up to **$85,000/year** on Affinity + Visible + Slack + Zoom + Calendly + Airtable + Tableau + Notion + a per-deal VDR. 
+> A typical 15-person VC could spend up to **$85,000/year** on Affinity + Visible + Slack + Zoom + Calendly + Airtable + Tableau + Notion + a per-deal VDR.
 
 > A 50-person firm spends might spend closer to **$278,000/year** on the many tools that a firm of that size would need, at the larger, enterprise tier.
 
@@ -58,9 +58,9 @@ Specialized relationship-management platforms for deal flow tracking, LP managem
 | Proprietary Vendor | Pricing | Self-Hosted Alternative | Licensing Cost |
 |---|---|---|---|
 | **Affinity CRM** | $167–$225/user/month (~$33,000/yr for 15 users)[^ujtmk6] | **TwentyCRM** — Modern open-source CRM, 45k+ GitHub stars, native AI/MCP integration | $0 |
-| **Salesforce Financial Services Cloud** | $325–$750/user/month + $50k–$250k implementation[^xwmpq2][^sye4vh] | **SuiteCRM** — Enterprise-grade fork of SugarCRM, full module ecosystem, battle-tested | $0 |
-| **4Degrees** | ~$100/user/month[^9heupy] | **EspoCRM** — Custom deal flow pipelines, flexible workflow builder, fast setup | $0 |
-| **DealCloud** | ~$85,000/yr enterprise[^9heupy] | **Corteza CRM** — Privacy-first, GDPR-compliant, API-first low-code architecture | $0 |
+| **Salesforce Financial Services Cloud** | $325–$750/user/month + $50k–$250k implementation[^xwmpq2][^sye4vh] | *(see TwentyCRM above)* — no OSS option genuinely matches FSC's private-markets workflow at this tier; TwentyCRM + the MCP/AI layer is the closest *functional* replacement and dramatically cheaper | $0 |
+| **DealCloud** | ~$85,000/yr enterprise[^9heupy] | *(see TwentyCRM above)* — same logic as FSC; relationship-intelligence flow lives in Twenty + your own AI orchestration on top, not in DealCloud's pipeline UI | $0 |
+| **4Degrees** | ~$100/user/month[^9heupy] | *(see TwentyCRM above)* | $0 |
 
 **Annual savings (15-person firm):** $31k–$33k vs. Affinity; up to $130k vs. Salesforce FSC.
 
@@ -80,14 +80,15 @@ Secure, permissioned document repositories for due diligence, with audit trails,
 
 Platforms that automate KPI collection from portfolio companies, generate LP quarterly reports, and surface portfolio health dashboards.
 
+> **A note on what doesn't belong here.** A casual search for "open source portfolio tracker" surfaces Ghostfolio, Wealthfolio, Rotki, and similar projects — these are *personal stock and crypto* portfolio trackers. They do not model portfolio companies, KPI collection, LP quarterly reporting, capital-call accounting, or ownership-stake math. We deliberately do not list them. The honest OSS answer for a VC firm is a custom build.
+
 | Proprietary Vendor | Pricing | Self-Hosted Alternative | Licensing Cost |
 |---|---|---|---|
-| **Visible.vc** | $149/mo (15 companies) → $349/mo (40 companies)[^9irjl6] | **Ghostfolio** — Open-source wealth/portfolio tracking with data-driven insights | $0 |
-| **Archstone** | $297/mo Core (15 portfolio + 25 LPs)[^9irjl6] | **Wealthfolio** — Local-first private portfolio tracker; desktop, mobile, or self-hosted web | $0 |
-| **Carta Portfolio** | $280–$77,000/yr by portfolio size[^9heupy] | **Rotki** — Privacy-focused, fully encrypted local portfolio manager with accounting/analytics | $0 |
-| *(any of the above)* | *(see above)* | **Baserow + NocoDB (custom)** — Custom portfolio tracking DB with API-driven data collection | $0 |
+| **Visible.vc** | $149/mo (15 companies) → $349/mo (40 companies)[^9irjl6] | **Custom NocoDB or Baserow build** — Portfolio companies as a base, KPIs as a related table, quarterly snapshots as time-series rows. 2–5 days of setup; fits firm's actual reporting cadence; survives metric pivots; joins against the CRM and VDR without integration licenses. | $0 |
+| **Archstone** | $297/mo Core (15 portfolio + 25 LPs)[^9irjl6] | *(see above — same custom build)* | $0 |
+| **Carta Portfolio** | $280–$77,000/yr by portfolio size[^9heupy] | *(see above — same custom build)* | $0 |
 
-**Annual savings (20 portfolio companies):** $3k–$4k vs. Visible.vc Standard; $8k–$13k at enterprise scale.
+**Annual savings (20 portfolio companies):** $3k–$4k vs. Visible.vc Standard; $8k–$13k at enterprise scale. Setup labor is real but one-time; the alternative pays setup costs *and* SaaS rent forever.
 
 ### Team Communication & Collaboration
 
@@ -255,13 +256,13 @@ Internal wikis and knowledge bases that preserve investment theses, due diligenc
 [^9heupy]: [Best Venture Capital Software (The $620/mo Stack) in 2026](https://www.peony.ink/blog/venture-capital-software-solutions)
 [^tg05fy]: [Dealroom Pricing Breakdown: Plans & Benefits](https://dataroom-providers.org/blog/dealroom-pricing-breakdown/)
 [^pgnjf9]: [Deal Room Software Pricing Guide 2024](https://sharevault.com/blog/virtual-data-room/deal-room-software-pricing-guide-2024/)
-[^9irjl6]: [5 Best VC Portfolio Monitoring Tools (2026 Compared)](https://vcbeast.com/best-portfolio-monitoring-tools)
 [^v6511v]: [The 5 best Slack alternatives for businesses in 2026](https://zapier.com/blog/slack-alternatives/)
 [^nn66bt]: [Slack Pricing in 2026: Complete Guide & What It Really Costs Your Business](https://www.zenzap.co/blog-posts/slack-pricing-in-2026-complete-guide-what-it-really-costs-your-business)
 [^7yw3a9]: [Calendly vs Zoom Scheduler: Honest Comparison (2026)](https://prospeo.io/s/calendly-vs-zoom)
 [^lbh4u5]: [Calendly vs Zoom Scheduler: Full Comparison for 2026](https://zeeg.me/en/blog/post/calendly-vs-zoom-scheduler)
 [^g0nlcg]: [Calendly Pricing](https://calendly.com/pricing)
 [^doodle]: [Doodle Pricing — Business Plan](https://doodle.com/en/premium/)
+[^9irjl6]: [5 Best VC Portfolio Monitoring Tools (2026 Compared)](https://vcbeast.com/best-portfolio-monitoring-tools)
 [^wv1771]: [The Open-Source Airtable Alternative: APITable, nocodb & ...](https://aitable.ai/blog/open-source-airtable-alternative/)
 [^fpdi0w]: [Confluence vs Notion Pricing 2026 | Features & Cost Comparison](https://www.docsie.io/blog/articles/confluence-vs-notion-pricing-comparison-2026/)
 [^m69w5r]: [Top Tableau competitors and alternatives to consider](https://www.thoughtspot.com/data-trends/business-intelligence/tableau-competitors)
