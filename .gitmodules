@@ -1,0 +1,6 @@
+[submodule "core/twenty-crm"]
+	path = core/twenty-crm
+	url = https://github.com/lossless-group/twenty-crm.git
+[submodule "core/papermark"]
+	path = core/papermark
+	url = https://github.com/lossless-group/papermark.git
