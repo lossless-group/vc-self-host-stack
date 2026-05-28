@@ -4,3 +4,9 @@
 [submodule "core/papermark"]
 	path = core/papermark
 	url = https://github.com/lossless-group/papermark.git
+[submodule "core/plunk"]
+	path = core/plunk
+	url = https://github.com/useplunk/plunk
+[submodule "core/postiz-app"]
+	path = core/postiz-app
+	url = https://github.com/gitroomhq/postiz-app

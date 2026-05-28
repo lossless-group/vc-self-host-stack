@@ -22,6 +22,8 @@ Setup and management available on request from [The Lossless Group](https://loss
 |---|---|---|
 | **[twenty-crm](./core/twenty-crm)** — modern open-source CRM, 45k+ GitHub stars, native AI/MCP | Affinity ($33k/yr) or Salesforce FSC ($97k+/yr) | $20k–$130k/yr |
 | **[papermark](./core/papermark)** — only fully open-source VDR; unlimited rooms, page-by-page analytics, custom domains | DealRoom ($12k–$15k/yr), ShareVault ($1.5k–$5k+/deal) | $11k–$49k/yr |
+| **[plunk](./core/plunk)** — open-source email platform; transactional sends, marketing campaigns, and automation workflows in one, AWS SES backend, Docker-deployable, AGPL-3.0 | Mailchimp ($1.6k–$4.2k/yr), Kit/ConvertKit ($1.1k–$2.4k/yr), SendGrid/Resend (transactional) | $1k–$4k/yr |
+| **[postiz-app](./core/postiz-app)** — open-source social media scheduling; one composer → many channels (X, LinkedIn, Instagram, Facebook, TikTok, YouTube, Mastodon, Bluesky), AI copy/design, per-post analytics, team collaboration, unlimited users, AGPL-3.0 | Hootsuite ($1.2k–$3k/yr), Buffer ($2.4k/yr), Sprout Social ($199+/seat/mo) | $1.2k–$5k/yr |
 
 ## Coming next
 
@@ -36,12 +38,14 @@ self-host-stack/
   core/                       ← the tools we've chosen and stand behind (submodules)
     twenty-crm/                 → lossless-group/twenty-crm   (Affinity alternative)
     papermark/                  → lossless-group/papermark    (DealRoom / ShareVault alternative)
+    plunk/                      → useplunk/plunk              (Mailchimp / Kit / SendGrid alternative)
+    postiz-app/                 → gitroomhq/postiz-app        (Hootsuite / Buffer / Sprout alternative)
     …                           more to come
   studies/                    ← alternatives we explored but didn't ship (submodules)
   client-stacks/              ← per-firm deployed instances (gitignored — operational, not public)
 ```
 
-- **`core/`** is the marketing surface. Each entry is a thin deploy wrapper around an upstream OSS tool, ideally referencing the official upstream image rather than vendoring it. The submodules point at forks under `lossless-group/` so deploy-side modifications can layer without polluting upstream.
+- **`core/`** is the marketing surface. Each entry is a thin deploy wrapper around an upstream OSS tool, ideally referencing the official upstream image rather than vendoring it. Where deploy-side modifications are needed, the submodule points at a fork under `lossless-group/` so changes can layer without polluting upstream (e.g. `twenty-crm`, `papermark`); where none are needed yet, it pins the official upstream directly (e.g. `plunk` → `useplunk/plunk`).
 - **`studies/`** is the "we looked at these and chose otherwise" layer. Pinned-upstream submodules for prior art we read but didn't ship.
 - **`client-stacks/`** is operational. Each subdir is one firm's actual deployment, with real env files and real database connection strings. **Intentionally gitignored** — these are not marketing material and they contain secrets.
 
@@ -102,6 +106,32 @@ Real-time messaging platforms for deal discussions, channel-organized portfolio 
 | **Microsoft Teams** | $4–$12.50/user/month (M365 bundle)[^v6511v] | **Element (Matrix)** — Fully end-to-end encrypted messaging on federated Matrix protocol | $0 |
 
 **Annual savings:** $1.2k–$3.9k for 15-person team; $3.1k–$6.3k for 50-person firm.
+
+### Email Marketing, Newsletters & Broadcast
+
+Outbound, firm-to-audience email: LP quarterly update sends, founder-network newsletters, fund announcements, and the transactional notices the rest of the stack generates (data-room access alerts, scheduling confirmations). A different lane than the internal chat above — this is one-to-many email, not team-to-team messaging.
+
+| Proprietary Vendor | Pricing | Self-Hosted Alternative | Licensing Cost |
+|---|---|---|---|
+| **Mailchimp Standard** | $20/mo (500 contacts), scaling to ~$135/mo at 10k contacts and $270/mo at 25k[^mchmp1] | **Plunk** — Open-source email platform that unifies transactional, campaign, and automation sends; visual no-code workflow builder, segments, contact management, custom domains with DKIM/SPF, AWS SES backend, Docker-deployable | $0 |
+| **Mailchimp Premium** | $350/mo flat to 10k contacts, $620/mo at 25k[^mchmp1] | *(see Plunk above)* | $0 |
+| **Kit (ConvertKit) Creator** | $39/mo (1k subs) → $89/mo (5k) → $199/mo (25k)[^kitcrt] | *(see Plunk above)* — same campaign + automation surface for creator-style newsletters | $0 |
+| **SendGrid / Resend / Mailgun** | per-email transactional pricing; commonly $80–$500+/mo at firm volume | *(see Plunk above)* — Plunk covers the transactional lane too, so one tool replaces both the marketing ESP and the transactional API | $0 |
+
+**Annual savings (15-person firm):** ~$1.1k–$4.2k depending on list size and tier replaced — Kit Creator (~$1.1k–$2.4k/yr), Mailchimp Standard (~$1.6k/yr), or Mailchimp Premium (~$4.2k/yr). Plunk is AGPL-3.0 and self-hosts on AWS SES at ~$0.10 per 1,000 emails[^plunk1], so a firm sending 50k emails/month pays under $5/month in delivery — the licensing line goes to $0.
+
+### Social Media Management & Scheduling
+
+One composer that publishes to every channel a firm maintains — LinkedIn thought leadership, X/Twitter, portfolio-news announcements, recruiting posts — with per-channel previews, scheduling, AI-assisted copy/design, and per-post analytics in one dashboard. The SaaS incumbents here punish you on the two axes a firm scales fastest: seats and connected accounts.
+
+| Proprietary Vendor | Pricing | Self-Hosted Alternative | Licensing Cost |
+|---|---|---|---|
+| **Hootsuite Professional** | $99/mo (1 user, 10 social accounts)[^hoot01] | **Postiz** — Open-source command center for social: write once and publish to X, LinkedIn, Instagram, Facebook, TikTok, YouTube, Mastodon, Bluesky and more; AI copy + Canva-style design, official-API analytics, team collaboration, unlimited users, Docker-deployable | $0 |
+| **Hootsuite Team** | $249/mo (3 users, 20 social accounts)[^hoot01] | *(see Postiz above)* | $0 |
+| **Buffer Team** | $199/mo (25 channels, 6 users); $5/channel/mo entry tier[^smmcmp] | *(see Postiz above)* — same write-once-publish-everywhere surface without per-channel metering | $0 |
+| **Sprout Social Standard** | from $199/user/month[^smmcmp] | *(see Postiz above)* — per-seat pricing is what makes Sprout escalate; self-hosting removes the seat tax entirely | $0 |
+
+**Annual savings (15-person firm):** ~$1.2k–$3k/yr replacing Hootsuite (Professional $1.2k/yr → Team $3k/yr) or Buffer Team (~$2.4k/yr); materially more if displacing Sprout Social, where every additional seat is another ~$2.4k/yr. Postiz is AGPL-3.0 with unlimited users self-hosted, so neither seats nor connected accounts inflate the bill.
 
 ### Video Conferencing & Meeting Infrastructure
 
@@ -243,6 +273,8 @@ Internal wikis and knowledge bases that preserve investment theses, due diligenc
 
 - [lossless-group/twenty-crm](https://github.com/lossless-group/twenty-crm) — the CRM fork
 - [lossless-group/papermark](https://github.com/lossless-group/papermark) — the VDR fork
+- [useplunk/plunk](https://github.com/useplunk/plunk) — the open-source email platform (pinned upstream; not yet forked under lossless-group/)
+- [gitroomhq/postiz-app](https://github.com/gitroomhq/postiz-app) — the social-media-scheduling platform (pinned upstream; not yet forked under lossless-group/)
 - [lossless-group/lossless-monorepo](https://github.com/lossless-group/lossless-monorepo) — the parent pseudomonorepo this lives inside as a submodule
 - [A logic behind Self-Hosted VC Stacks](https://www.lossless.group/vibe-with-us/a-logic-behind-self-hosted-vc-stacks) — the long-form thesis on lossless.group
 
@@ -268,3 +300,8 @@ Internal wikis and knowledge bases that preserve investment theses, due diligenc
 [^m69w5r]: [Top Tableau competitors and alternatives to consider](https://www.thoughtspot.com/data-trends/business-intelligence/tableau-competitors)
 [^zy5y8t]: [Tableau Alternatives: Visual Data Analysis Tools for Every Budget](https://querio.ai/articles/tableau-alternatives-visual-data-analysis-tools-for-every-budget)
 [^4m5obv]: [Best Tableau Alternatives in 2026: Matched to Why You're Looking](https://www.definite.app/blog/best-tableau-alternatives)
+[^mchmp1]: [Mailchimp Pricing Plans | Mailchimp](https://mailchimp.com/pricing/marketing/)
+[^kitcrt]: [Kit (ConvertKit) Pricing 2026: Plans, Costs & Value](https://www.emailvendorselection.com/kit-pricing/)
+[^plunk1]: [Plunk Pricing — The Open-Source Email Platform](https://www.useplunk.com/pricing)
+[^hoot01]: [Hootsuite Pricing 2026: Plans, Costs & Hidden Fees](https://checkthat.ai/brands/hootsuite/pricing)
+[^smmcmp]: [Social Media Management Pricing Comparison 2026: Hootsuite vs Buffer vs Sprout Social vs Agorapulse](https://www.saaspricepulse.com/blog/social-media-management-pricing-comparison-2026)
