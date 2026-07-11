@@ -24,6 +24,7 @@ Setup and management available on request from [The Lossless Group](https://loss
 | **[papermark](./core/papermark)** — only fully open-source VDR; unlimited rooms, page-by-page analytics, custom domains | DealRoom ($12k–$15k/yr), ShareVault ($1.5k–$5k+/deal) | $11k–$49k/yr |
 | **[plunk](./core/plunk)** — open-source email platform; transactional sends, marketing campaigns, and automation workflows in one, AWS SES backend, Docker-deployable, AGPL-3.0 | Mailchimp ($1.6k–$4.2k/yr), Kit/ConvertKit ($1.1k–$2.4k/yr), SendGrid/Resend (transactional) | $1k–$4k/yr |
 | **[postiz-app](./core/postiz-app)** — open-source social media scheduling; one composer → many channels (X, LinkedIn, Instagram, Facebook, TikTok, YouTube, Mastodon, Bluesky), AI copy/design, per-post analytics, team collaboration, unlimited users, AGPL-3.0 | Hootsuite ($1.2k–$3k/yr), Buffer ($2.4k/yr), Sprout Social ($199+/seat/mo) | $1.2k–$5k/yr |
+| **[karakeep](./core/karakeep)** — self-hostable bookmark-everything app (links, notes, images) with AI-based automatic tagging and full-text search; multi-user with an admin panel for account creation and role management, AGPL-3.0 | Raindrop.io Pro ($36/yr), Pocket/Instapaper Premium ($36–$60/yr) | $540–$900/yr (15 users) |
 
 ## Coming next
 
@@ -40,6 +41,7 @@ self-host-stack/
     papermark/                  → lossless-group/papermark    (DealRoom / ShareVault alternative)
     plunk/                      → useplunk/plunk              (Mailchimp / Kit / SendGrid alternative)
     postiz-app/                 → gitroomhq/postiz-app        (Hootsuite / Buffer / Sprout alternative)
+    karakeep/                    → karakeep-app/karakeep       (Raindrop.io / Pocket alternative)
     …                           more to come
   studies/                    ← alternatives we explored but didn't ship (submodules)
   client-stacks/              ← per-firm deployed instances (gitignored — operational, not public)
@@ -195,6 +197,17 @@ Internal wikis and knowledge bases that preserve investment theses, due diligenc
 
 **Annual savings (20-person team):** $1.3k–$4.2k; $4.1k–$10.8k for 50-person firm.
 
+### Research Capture & Bookmarking
+
+Tools for capturing and organizing web research, articles, and reference links gathered during deal sourcing and due diligence, with full-text search so nothing gets lost in browser bookmarks or Slack DMs.
+
+| Proprietary Vendor | Pricing | Self-Hosted Alternative | Licensing Cost |
+|---|---|---|---|
+| **Raindrop.io Pro** | ~$3/user/month (~$36/yr)[^rdpio1] | **Karakeep** — self-hostable bookmark-everything app (links, notes, images) with AI-based automatic tagging and full-text search; multi-user with admin-managed accounts, AGPL-3.0 | $0 |
+| **Pocket / Instapaper Premium** | ~$3–5/user/month[^rdpio1] | *(see Karakeep above)* | $0 |
+
+**Annual savings (15-person firm):** $540–$900/yr.
+
 ---
 
 ## Total tech stack cost comparison
@@ -305,3 +318,4 @@ Internal wikis and knowledge bases that preserve investment theses, due diligenc
 [^plunk1]: [Plunk Pricing — The Open-Source Email Platform](https://www.useplunk.com/pricing)
 [^hoot01]: [Hootsuite Pricing 2026: Plans, Costs & Hidden Fees](https://checkthat.ai/brands/hootsuite/pricing)
 [^smmcmp]: [Social Media Management Pricing Comparison 2026: Hootsuite vs Buffer vs Sprout Social vs Agorapulse](https://www.saaspricepulse.com/blog/social-media-management-pricing-comparison-2026)
+[^rdpio1]: [Raindrop.io Pro — Subscription pricing](https://raindrop.io/pro/buy)

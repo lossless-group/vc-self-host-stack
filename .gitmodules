@@ -10,3 +10,6 @@
 [submodule "core/postiz-app"]
 	path = core/postiz-app
 	url = https://github.com/gitroomhq/postiz-app
+[submodule "core/karakeep"]
+	path = core/karakeep
+	url = https://github.com/karakeep-app/karakeep.git
