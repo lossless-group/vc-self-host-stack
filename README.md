@@ -28,7 +28,7 @@ Setup and management available on request from [The Lossless Group](https://loss
 
 ## Coming next
 
-Cal.com (scheduling), Mattermost (team chat), Jitsi Meet (video), Metabase (BI), NocoDB (no-code DB), BookStack (knowledge base). Each will land as its own submodule under `core/` with the same deploy-wrapper discipline. See the [full catalogue](#the-stack) below.
+Cal.diy / Tymeslot (scheduling), Mattermost (team chat), Jitsi Meet (video), Metabase (BI), NocoDB (no-code DB), BookStack (knowledge base). Each will land as its own submodule under `core/` with the same deploy-wrapper discipline. See the [full catalogue](#the-stack) below.
 
 ---
 
@@ -152,12 +152,14 @@ Scheduling automation that eliminates email back-and-forth for investor meetings
 
 | Proprietary Vendor | Pricing | Self-Hosted Alternative | Licensing Cost |
 |---|---|---|---|
-| **Calendly Standard** | $10/user/month[^lbh4u5][^g0nlcg] | **Cal.com** — Open-source Calendly alternative; full source access, self-hostable, identical feature set | $0 |
+| **Calendly Standard** | $10/user/month[^lbh4u5][^g0nlcg] | **[Cal.diy](https://cal.diy)** — MIT-licensed community edition Cal.com split off after going closed-source (see note below); self-hostable, full source access. **[Tymeslot](https://github.com/Tymeslot/tymeslot)** (Elixir/Phoenix LiveView, AGPL-3.0) is a newer, ground-up alternative built partly in response to that shift — smaller community (145★) but cleaner single-project licensing | $0 |
 | **Calendly Teams** | $16/user/month with routing/distribution[^lbh4u5] | **Easy!Appointments** — Self-hosted scheduling with Google Calendar/CalDAV sync, provider mgmt, email notifications, API | $0 |
-| **Calendly Enterprise** | From $15,000/yr (SAML SSO, advanced controls)[^7yw3a9] | **Cal.com (self-hosted Enterprise)** — Full enterprise feature set including SSO, SCIM, audit logs | $0 |
-| **Doodle Business** | ~$14.95/user/month (group find-a-time polls)[^doodle] | **Rallly** — Open-source Doodle alternative for group scheduling; modern Next.js, 10k+ GitHub stars. Different lane than Cal.com — covers IC scheduling, LP annual meeting coordination, partner offsites where 1:1 booking pages don't fit. | $0 |
+| **Calendly Enterprise** | From $15,000/yr (SAML SSO, advanced controls)[^7yw3a9] | **Tymeslot** — self-hosted with SSO/OAuth, webhooks, Stripe Connect. Cal.com's old Enterprise self-hosting path is no longer a genuinely free option (see note below) | $0 |
+| **Doodle Business** | ~$14.95/user/month (group find-a-time polls)[^doodle] | **Rallly** — Open-source Doodle alternative for group scheduling; modern Next.js, 10k+ GitHub stars. Different lane than Cal.diy/Tymeslot — covers IC scheduling, LP annual meeting coordination, partner offsites where 1:1 booking pages don't fit. | $0 |
 
 **Annual savings (15-person team):** $1.3k–$4k vs. Teams or Enterprise tiers. Add ~$2.7k/yr if replacing Doodle Business at the same scale.
+
+> **A note on Cal.com's 2026 license change.** In April 2026, Cal.com moved its commercial codebase closed-source, citing AI-era code-security concerns industry-wide. The formerly-open community edition was split off as a new project, **[Cal.diy](https://cal.diy)** (MIT license, self-host-only — "use at your own risk," no managed-cloud counterpart). Self-hosting the old Cal.com Enterprise edition now requires an active paying Cal.com relationship and a private-repo invite; it is **no longer a $0, genuinely open-source path**. We're tracking **[Tymeslot](https://github.com/Tymeslot/tymeslot)** as the leading ground-up alternative that emerged from this shift — see `context-v/explorations/Watchlist-Interesting-Tools.md` for the full evaluation.
 
 ### Database & Workflow Applications
 
