@@ -37,3 +37,6 @@ deployment-info.txt
 .idea
 .vscode
 *.swp
+
+# ops credentials (backups etc.) — never committed
+ops/.env

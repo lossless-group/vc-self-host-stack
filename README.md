@@ -26,6 +26,37 @@ Setup and management available on request from [The Lossless Group](https://loss
 | **[postiz-app](./core/postiz-app)** — open-source social media scheduling; one composer → many channels (X, LinkedIn, Instagram, Facebook, TikTok, YouTube, Mastodon, Bluesky), AI copy/design, per-post analytics, team collaboration, unlimited users, AGPL-3.0 | Hootsuite ($1.2k–$3k/yr), Buffer ($2.4k/yr), Sprout Social ($199+/seat/mo) | $1.2k–$5k/yr |
 | **[karakeep](./core/karakeep)** — self-hostable bookmark-everything app (links, notes, images) with AI-based automatic tagging and full-text search; multi-user with an admin panel for account creation and role management, AGPL-3.0 | Raindrop.io Pro ($36/yr), Pocket/Instapaper Premium ($36–$60/yr) | $540–$900/yr (15 users) |
 
+## Live in production today (managed tier)
+
+This stopped being theory on 2026-07-24. What's running right now, for real
+paying clients, with the receipts in [`changelog/`](./changelog/):
+
+- **Twenty CRM, deployed twice** — two client firms, each in their own
+  Railway project with their own postgres, redis, worker, and S3 file
+  storage. Zero shared infrastructure between clients. Official upstream
+  image, version-pinned (`v2.24.1`), stood up from the written runbook in
+  [`docs/twenty/setup.md`](./docs/twenty/setup.md) — the second deployment
+  ran start-to-finish off the doc in about six minutes.
+- **Backups that restore, weekly** — per-client `pg_dump` cron to a
+  per-client Cloudflare R2 bucket (bucket-scoped credentials, so one
+  client's backups are invisible to everything else). The restore path is
+  drilled, not assumed: we pulled a dump out of R2, rebuilt a database
+  from it, and verified the records inside.
+- **AI access with no terminal, no config file, no API key** — Twenty's
+  native MCP endpoint speaks the full OAuth spec (discovery, dynamic
+  client registration, PKCE). Proven end-to-end with Claude Desktop: paste
+  one URL as a custom connector, log into the CRM in the browser, and your
+  AI reads and writes the CRM *as you*. Setup instructions ship in two
+  renditions, including an agent-facing walkthrough
+  ([`docs/twenty/connect-your-ai.md`](./docs/twenty/connect-your-ai.md))
+  built so a non-technical person can just tell their AI "help me set this
+  up." ChatGPT-side and mobile verification are in progress.
+
+Supported means supported: version-pinned images, written restore runbooks
+per client, and the deploy gotchas we actually hit (healthcheck `PORT`,
+`TRUST_PROXY` behind the proxy, gzipped-dump restores) are encoded in the
+runbook so they only bite once — ever, for anyone.
+
 ## Coming next
 
 Cal.diy / Tymeslot (scheduling), Mattermost (team chat), Jitsi Meet (video), Metabase (BI), NocoDB (no-code DB), BookStack (knowledge base). Each will land as its own submodule under `core/` with the same deploy-wrapper discipline. See the [full catalogue](#the-stack) below.
@@ -45,6 +76,10 @@ self-host-stack/
     …                           more to come
   studies/                    ← alternatives we explored but didn't ship (submodules)
   client-stacks/              ← per-firm deployed instances (gitignored — operational, not public)
+  docs/                       ← client-agnostic deploy runbooks + AI-connection guides (public)
+    twenty/                     → setup.md (deploy procedure), connect-your-ai.md (agent-facing setup)
+  changelog/                  ← dated ship notes — what went live, when, and what we learned
+  context-v/                  ← living documentation (specs, explorations) per Lossless convention
 ```
 
 - **`core/`** is the marketing surface. Each entry is a thin deploy wrapper around an upstream OSS tool, ideally referencing the official upstream image rather than vendoring it. Where deploy-side modifications are needed, the submodule points at a fork under `lossless-group/` so changes can layer without polluting upstream (e.g. `twenty-crm`, `papermark`); where none are needed yet, it pins the official upstream directly (e.g. `plunk` → `useplunk/plunk`).
