@@ -96,6 +96,18 @@ const title = `${client.display_name} — Your Tools`;
         </p>
       </section>
 
+      <section class="card">
+        <h2>Your didi account <span class="badge">Coming soon</span></h2>
+        <p>
+          One account for everything on this page — sign in once, and your
+          apps, your AI connections, and your settings follow you. We're
+          building it now.
+        </p>
+        <button class="button ghost" type="button" disabled
+          >Create your didi account</button
+        >
+      </section>
+
       <footer>
         <p>
           Questions, hiccups, ideas? Your operator is one message away.
@@ -212,6 +224,25 @@ const title = `${client.display_name} — Your Tools`;
       }
       .button:hover {
         filter: brightness(1.08);
+      }
+      .button.ghost {
+        background: transparent;
+        color: var(--text-dim);
+        border: 1px dashed var(--border);
+        font: inherit;
+        font-weight: 650;
+        cursor: default;
+      }
+      .badge {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.15rem 0.55rem;
+        vertical-align: middle;
+        margin-left: 0.4rem;
       }
       .copyline {
         display: flex;
