@@ -40,3 +40,8 @@ deployment-info.txt
 
 # ops credentials (backups etc.) — never committed
 ops/.env
+
+# hub build artifacts
+hub/node_modules/
+hub/dist/
+hub/.astro/
