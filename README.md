@@ -225,12 +225,16 @@ BI platforms that transform portfolio data and fund metrics into interactive das
 
 Internal wikis and knowledge bases that preserve investment theses, due diligence frameworks, LP communications, and operating playbooks.
 
+> **Our pick: [Outline](https://github.com/outline/outline) is the preferred Knowledge Base / Advanced Documents / Company Brain for the moment.** Markdown-native, Notion-adjacent UX — and critically, **API keys and MCP access come free with the open-source deployment**, so agents get full read/write from day one. **Working in production** since 2026-07-27: deployed for a client stack, workspace + collections live, API key minted, and the first documents written by an agent through the REST API the same day (`docs/outline/setup.md`).
+
 | Proprietary Vendor | Pricing | Self-Hosted Alternative | Licensing Cost |
 |---|---|---|---|
-| **Confluence Standard** | $5.42/user/month (Rovo AI included)[^fpdi0w] | **Outline** — Modern, fast wiki with Slack-style editing, real-time collaboration, markdown-native | $0 |
+| **Confluence Standard** | $5.42/user/month (Rovo AI included)[^fpdi0w] | **Outline** ⭐ *our pick* — Modern, fast wiki with Slack-style editing, real-time collaboration, markdown-native; full REST API + API keys + MCP in the free self-hosted edition | $0 |
 | **Confluence Premium** | $10.42/user/month[^fpdi0w] | **BookStack** — Self-hosted wiki with book/chapter/page hierarchy; ideal for organizing investment frameworks | $0 |
 | **Notion Plus** | $10/user/month[^fpdi0w] | **Wiki.js** — Modern open-source wiki; multiple auth options, beautiful UI, extensive plugin ecosystem | $0 |
 | **Notion Business** | $20/user/month (includes AI)[^fpdi0w] | **AppFlowy** — The most Notion-shaped OSS option; docs + databases + AI in one app, 60k+ GitHub stars, native desktop clients, self-hostable via AppFlowy Cloud. Also covers Airtable-style database use cases. | $0 |
+
+> **Evaluated and ruled out: Docmost** (2026-07-27). It looks the most fully-featured of the self-hosted Notion alternatives — spaces, real-time collaboration, a polished editor — but **API keys are gated behind an Enterprise license** in the self-hosted edition. Agent/API access is a headline feature of every Lossless stack, so that's disqualifying regardless of how good the UI is. We deployed it, hit the gate in the settings screen, and replaced it with **Outline**, whose full REST API and API keys are free in self-hosting.
 
 **Annual savings (20-person team):** $1.3k–$4.2k; $4.1k–$10.8k for 50-person firm.
 

@@ -45,3 +45,6 @@ ops/.env
 hub/node_modules/
 hub/dist/
 hub/.astro/
+
+# Playwright MCP session artifacts
+.playwright-mcp/

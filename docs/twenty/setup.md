@@ -132,6 +132,26 @@ Microsoft auth, calendar/messaging sync, SMTP) stay unset until a client asks.
 
 ## Deltas observed per deployment
 
+- **ALL DEPLOYMENTS — Railway redeploy gotcha (2026-07-27):** `railway
+  redeploy` re-runs the PREVIOUS deployment spec — start-command, healthcheck,
+  and other service-config changes made since are SILENTLY DROPPED (proven
+  via an in-network diagnostic against docmost-redis, whose config never
+  applied through three redeploys). To apply config changes, mint a NEW
+  deployment: set a throwaway variable without `--skip-deploys`
+  (convention: `CONFIG_EPOCH=<n>`). Variables, unlike config, ARE picked up
+  by redeploys — which is why the Twenty deploys *appeared* to work; audit
+  any service whose start command was set post-creation (lossless
+  twenty-worker/twenty-redis flagged, unverified — Michael declined the
+  bump 2026-07-27 since the app works; revisit if background jobs misbehave).
+- **lossless (2026-07-27):** third execution (our own org's instance) — ran
+  nearly verbatim. Two deltas, both tooling-shaped: (1) services created from
+  an image deploy IMMEDIATELY, before variables are set — set vars with
+  `--skip-deploys` then explicitly `railway redeploy` each service (postgres's
+  var-less first boot fails harmlessly; the redeploy does a clean initdb);
+  (2) the Railway MCP `add_reference_variable` tool rejects embedded
+  references (value must START with `${{`) — set composite URLs like
+  `PG_DATABASE_URL` via plain `set_variables`; Railway resolves the template
+  syntax either way.
 - **reach-edu (2026-07-24):** first execution — this doc *is* the delta log.
   Notable: healthcheck timeout is seconds not ms; `railway bucket credentials`
   has no `--project` flag (needs linked dir); spec said "generate APP_SECRET"
