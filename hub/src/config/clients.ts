@@ -8,6 +8,8 @@ export interface ClientHub {
   crm_url: string;
   mcp_url: string;
   agent_doc_url: string;
+  /** Outline knowledge base — omit for clients without one deployed. */
+  wiki_url?: string;
 }
 
 export const CLIENTS: Record<string, ClientHub> = {
@@ -18,6 +20,7 @@ export const CLIENTS: Record<string, ClientHub> = {
     mcp_url: "https://twenty-server-production-4b1e.up.railway.app/mcp",
     agent_doc_url:
       "https://raw.githubusercontent.com/lossless-group/vc-self-host-stack/main/docs/twenty/connect-your-ai.md",
+    wiki_url: "https://outline-production-3d8d.up.railway.app",
   },
   "reach-edu": {
     slug: "reach-edu",

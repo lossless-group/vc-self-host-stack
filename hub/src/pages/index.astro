@@ -37,6 +37,22 @@ const title = `${client.display_name} — Your Tools`;
         <a class="button" href={client.crm_url}>Open your CRM &rarr;</a>
       </section>
 
+      {
+        client.wiki_url && (
+          <section class="card">
+            <h2>Your Knowledge Base</h2>
+            <p>
+              Your team wiki — company profiles, research, playbooks, and
+              meeting notes, all searchable and editable together. Sign in
+              with your workspace account.
+            </p>
+            <a class="button" href={client.wiki_url}>
+              Open your Knowledge Base &rarr;
+            </a>
+          </section>
+        )
+      }
+
       <section class="card">
         <h2>Connect Claude to your CRM</h2>
         <p>
