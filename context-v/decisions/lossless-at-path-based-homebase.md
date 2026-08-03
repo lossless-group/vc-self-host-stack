@@ -1,0 +1,51 @@
+---
+title: "lossless.at path-based homebases + /<client>/<service>/api gateway"
+date_created: 2026-08-02
+status: Open
+tags: [Decision, lossless.at, Homebase, Gateway, MCP, Portal]
+---
+
+# lossless.at path-based homebases + `/<client>/<service>/api`
+
+## Context
+
+Moving away from per-tool `didi.sh` subdomains (happenstance). Michael owns
+`lossless.at` and wants client-dedicated homebases at `lossless.at/<client>`
+that improve over time. Later refined to: `lossless.at/<client-handle>/<service-handle>/api`.
+
+## Decided
+
+- **Homebase page** = a path route `lossless.at/<client>` (portal). DONE in
+  code (`hub/` refactored to `/[client]`, verified locally, uncommitted).
+- **DNS** = move `lossless.at` off iwantmyname to a provider supporting the
+  apex. Cloudflare rejected `.at` (Registrar TLD limit). **Recommended: Vercel
+  DNS** (already runs `didi.sh`, supports apex ALIAS + `.at`). Fallback:
+  `www.lossless.at` + apex redirect.
+- **Per-client isolation** = every tool is its own service in the client's own
+  Railway project. No shared/multi-tenant deploys, ever. (Includes Papermark.)
+
+## Open — the `/<client>/<service>/api` gateway
+
+Two surfaces behave differently:
+
+1. **API / MCP / connector endpoints** — CAN live under the path via a reverse
+   proxy/gateway. This IS the Phase 2 "homebase-MCP" layer (see
+   `ai-labs/id-didi-sh` parent spec, D7). Payoff: clean connector URLs like
+   `lossless.at/the-water-foundation/twenty/mcp`. Hard bit: MCP OAuth advertises
+   absolute URLs from Twenty's `SERVER_URL`; the proxy + `SERVER_URL` must be set
+   to the proxied address. Prototype on Twenty first to de-risk subpath-OAuth.
+2. **Human web UIs** (Twenty/Postiz/Outline dashboards) — resist living under a
+   subpath (assume host root; Postiz especially). Default: they open on their own
+   host, linked from the homebase page. Serving them under the path = separate,
+   larger investigation.
+
+**Unresolved:** whether Michael wants (1) only, or also (2). Proceeding on the
+assumption of (1) — gateway for API/connector surface, links-out for dashboards —
+and folding it into the homebase-MCP spec. Revisit if he wants dashboards under
+the path too.
+
+## Related
+
+- `ai-labs/id-didi-sh` — homebase-as-capability-plane parent spec (D7, JWKS identity)
+- `context-v/specs/Per-Client-Stack-Deployment-Spec-Twenty-First.md`
+- Portal code: `self-host-stack/hub/`
