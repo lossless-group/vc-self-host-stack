@@ -13,3 +13,6 @@
 [submodule "core/karakeep"]
 	path = core/karakeep
 	url = https://github.com/karakeep-app/karakeep.git
+[submodule "hubs/lossless-at"]
+	path = hubs/lossless-at
+	url = https://github.com/lossless-group/lossless-at.git
