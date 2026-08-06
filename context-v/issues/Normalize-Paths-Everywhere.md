@@ -2,13 +2,15 @@
 title: "Normalize Paths Everywhere — one URL shape for every client + service"
 lede: "Today every tool lives at a raw Railway hostname; the goal is one owned, legible shape — lossless.at/<client>/<service>/… — for humans and agents alike."
 date_created: 2026-08-02
-date_modified: 2026-08-02
+date_modified: 2026-08-06
 authors:
   - Michael Staton
 augmented_with:
   - Claude Code on Claude Opus 4.8
-semantic_version: 0.0.0.1
-status: Open
+  - Claude Code on Claude Opus 5
+semantic_version: 0.0.1.0
+status: Partially-Shipped
+date_first_published: 2026-08-06
 tags:
   - Issue-Resolution
   - Path-Normalization
@@ -45,11 +47,16 @@ service-path half does not.
 - **Homebase page:** DONE — `lossless-at.vercel.app/<client>` renders each client's
   homebase from `hubs/lossless-at/src/config/clients.ts`. `lossless.at` apex
   attaches once DNS propagates (nameservers moved to Vercel 2026-08-02).
-- **Service paths:** NOT built. `lossless.at/<client>/<service>/mcp` (and `/api`)
-  404 — the portal serves only the page at `/<client>`, nothing behind it.
-- **What's advertised today:** the raw Railway host, e.g. Twenty's connector is
-  `https://twenty-server-production-9e79.up.railway.app/mcp`, and `clients.ts`
-  stores those raw hosts.
+- **Service paths:** BUILT for the human surface (2026-08-06). Every tool a
+  client runs answers at `lossless.at/<client>/<handle>` and 307s to its origin.
+  Handles are role-based (`crm`, `wiki`, `social`, `dataroom`) with the vendor
+  name as a per-client alias (`/twenty` → `/crm`). Everything below a service
+  passes through: `/<client>/crm/<anything>` → `<origin>/<anything>`, query
+  string preserved.
+- **What's advertised today:** the homebase cards now link portal paths. The
+  **MCP connector box still hands out the raw Railway host** —
+  `https://twenty-server-production-9e79.up.railway.app/mcp` — for the reason in
+  "The crux" below.
 
 ## Desired end state
 
@@ -63,7 +70,32 @@ Every externally-handed-out address is a `lossless.at/<client>/<service>/…` pa
 Raw `*.up.railway.app` hosts become an internal implementation detail, never
 handed to a human or pasted into an AI.
 
-## The crux — MCP OAuth under a subpath
+## The crux, sharpened — a redirect cannot carry a bearer token
+
+**Measured 2026-08-06, and it kills the redirect approach for MCP specifically.**
+The blocker below (discovery advertising the wrong host) is real but secondary.
+The decisive one is simpler: **`Authorization` does not survive a cross-origin
+redirect.** The Fetch spec requires clients to strip it when a redirect crosses
+an origin boundary, and they do. Proven against a header-echoing origin behind
+the live 307:
+
+| Request | What the upstream received |
+|---|---|
+| Direct to origin | `Bearer TESTTOKEN123` |
+| Through the 307 (default client behavior) | **stripped** |
+| Through the 307, `curl --location-trusted` | `Bearer TESTTOKEN123` |
+
+So a connector added at `lossless.at/<client>/crm/mcp` would complete OAuth
+against the Railway host, store its token, and then 401 forever — the token is
+discarded on every hop. `--location-trusted` is an explicit opt-in to leak
+credentials across origins; no MCP client does that, and none should.
+
+**Consequence:** the pretty MCP path can only become real by **proxying**
+(same-origin, no redirect, headers forwarded deliberately), never by redirecting.
+That upgrades option 1/2 below from "nice to have" to "the only way", and it is
+why the MCP box on the homebase still hands out the Railway URL.
+
+## The original crux — MCP OAuth under a subpath
 
 A naive reverse-proxy of `/<client>/<service>/mcp` → the tool's `/mcp`
 **half-breaks the connector login.** Twenty's MCP speaks OAuth, and its discovery
@@ -104,6 +136,59 @@ When resolved, normalize in all of:
 - `docs/twenty/connect-your-ai.md` (the agent-facing setup guide)
 - per-client `client-stacks/<client>/*/stack.md` records
 - any operator hand-off that currently pastes a `*.up.railway.app` URL
+
+## Remaining work (as of 2026-08-06)
+
+**Shipped**
+
+- Role-based service handles + per-client vendor aliases, in `clients.ts` as data
+  (`services[]`), replacing the four hardcoded `*_url` fields.
+- `/<client>/<service>` and `/<client>/<service>/<rest...>` routes, 307 with
+  method + body preserved, query string carried, `cache-control: no-store` so a
+  backend move takes effect immediately.
+- Homebase cards render from config and link portal paths.
+- Two guards worth keeping: leading `/` and `\` are stripped from the passthrough
+  remainder (otherwise `/<client>/crm//evil.com` is an open redirect via
+  protocol-relative resolution), and the built URL is re-checked against the
+  intended origin before it is sent.
+- `security.checkOrigin: false` — Astro's CSRF guard 403s any POST without a
+  matching `Origin`, which silently broke the MCP path. Safe here: no forms, no
+  writes. **Re-evaluate the moment this app accepts a write.**
+
+**Left**
+
+- **The MCP path is not a connector URL.** It resolves, but see "The crux,
+  sharpened" — needs a proxy, not a redirect. `clients.ts` still advertises the
+  origin URL, and `mcpPortalUrl()` carries a do-not-use warning.
+- **`docs/twenty/connect-your-ai.md`** still pastes the raw Railway host. Correct
+  as-is, since that IS the working connector address — revisit when the proxy lands.
+- **Postiz is not in the portal, and a redirect cannot fix it.** See the section
+  below — it needs a host of its own, which is a different piece of work.
+- **Per-client `client-stacks/<client>/*/stack.md`** records still carry raw hosts.
+
+## Postiz is the exception — it needs a host, not a path
+
+The redirect model assumes a tool only needs to be *addressed* by a nice URL,
+not *served* from one. Postiz breaks that assumption, and it is worth writing
+down because it is the one case where this whole approach doesn't apply.
+
+Per `client-stacks/the-water-foundation/postiz/stack.md`, Postiz is **parked
+before first-signup**: it derives its auth cookie `Domain=` from `FRONTEND_URL`,
+and `*.up.railway.app` resolves to a Public Suffix apex (`.railway.app`) that
+browsers refuse to set cookies against. Register and login return 200 and the
+user stays logged out forever.
+
+A 307 from `lossless.at/<client>/postiz` lands the browser on that same rejected
+apex, so it changes nothing. Postiz stays blocked until it gets a real custom
+host (`*.lossless.at` or similar) with `MAIN_URL` / `FRONTEND_URL` /
+`NEXT_PUBLIC_BACKEND_URL` set to it — the procedure is already written in that
+stack.md. Only then is there a working URL worth putting in `clients.ts`.
+
+Naming note: the handle is **`postiz`, not `social`**. Postiz is a cross-platform
+*post planner* — it publishes on a schedule; it is not a place to read or monitor
+feeds. `social` is deliberately reserved for the social-perusing surface, which
+has no good open-source option and is expected to be built from scratch. Calling
+the scheduler `social` would have squatted on that name.
 
 ## Related
 

@@ -44,6 +44,24 @@ assumption of (1) — gateway for API/connector surface, links-out for dashboard
 and folding it into the homebase-MCP spec. Revisit if he wants dashboards under
 the path too.
 
+## Update 2026-08-06 — the two surfaces swapped difficulty
+
+Reality inverted the assumption above.
+
+- **(2) Human dashboards — DONE, and it was the easy half.** They don't need to
+  *serve* under a subpath, only to be *addressed* by one. A 307 from
+  `lossless.at/<client>/<handle>` to the tool's own host gives the legible URL
+  without touching how the app is hosted. Shipped for crm/wiki/dataroom.
+- **(1) API/MCP — blocked on the thing that looked easy.** A redirect cannot
+  carry a bearer token across origins (measured; see
+  [[Normalize-Paths-Everywhere]]), so the connector surface needs a real proxy.
+  Redirects buy nothing here.
+
+Also decided: handles are **role-based** (`crm`, `wiki`, `social`, `dataroom`)
+rather than tool-based, so the address outlives the vendor; the tool name
+(`/twenty`, `/outline`) survives as a per-client alias that redirects to the
+canonical role path.
+
 ## Related
 
 - `ai-labs/id-didi-sh` — homebase-as-capability-plane parent spec (D7, JWKS identity)
