@@ -68,3 +68,42 @@ Railway project: <client>
   Booted healthy in under a minute; first-run setup screen rendered without
   any auth provider configured (docs elsewhere claiming a provider is
   required for bootstrap are stale for ≥1.9).
+
+- **reach-edu (2026-08-06):** two traps, both costly, both now avoidable.
+
+  1. **The Docker tag has no `v`.** GitHub releases Outline as `v1.9.2`; Docker
+     Hub publishes `1.9.2`. `outlinewiki/outline:v1.9.2` does not exist and
+     fails at image pull with **no useful log line** — the deployment just
+     reads FAILED. **Read the tag off Docker Hub, never the GitHub release
+     page.** Verify before deploying:
+     `curl -s https://hub.docker.com/v2/repositories/outlinewiki/outline/tags/<tag>`
+
+  2. **A failed first boot deadlocks every boot after it.** Before
+     `checkPendingMigrations`, Outline takes a Redlock lock on the redis key
+     `migrations` (TTL ~180s). A container that dies holding it leaves the lock
+     live, and the next container's retry window is *shorter* than the TTL — so
+     it logs `The operation was unable to achieve a quorum during its retry
+     window` and quits, forever. Restarting only feeds the loop.
+
+     **Break it:** stop the service (`railway down --service outline -y`), poll
+     `railway ssh --service outline-redis -- redis-cli TTL migrations` until it
+     returns `-2`, then mint exactly ONE deploy via `CONFIG_EPOCH`. It migrates
+     and boots cleanly.
+
+  Also confirmed: **step 4's warning is real** — `railway redeploy` re-ran the
+  original deployment *including its empty variable set*. `CONFIG_EPOCH` is the
+  only reliable trigger.
+
+  And a correction to step 1's implied ordering: the **redis start command is
+  not load-bearing**. reach-edu's `outline-redis` runs with no start command and
+  still reports `maxmemory-policy=noeviction` (the redis default when no
+  maxmemory is set), `protected-mode=no`, `bind=* -::*`. Set it for uniformity
+  with the other bundles; it is not what makes the thing work.
+
+  **Tooling floor: Railway CLI ≥5.30.** On 4.8.0, `railway logs <id>` returns
+  "Deployment id does not exist" for every deployment, and there is no way to
+  change a service's image or delete a service — the failure above is
+  undiagnosable. 5.30 adds `railway service source connect --image`,
+  `railway service status`, working `railway logs --lines`, and
+  `railway ssh -- <cmd>`. Note the CLI's stored session token is **not** valid
+  for the public GraphQL API (403); that needs a dashboard-minted token.
