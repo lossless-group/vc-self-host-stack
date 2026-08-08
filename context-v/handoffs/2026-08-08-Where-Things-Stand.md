@@ -20,13 +20,23 @@ tags:
 
 ## ⬜ DO THIS FIRST (2 minutes)
 
-**Open your email. Click the magic link sent to `michael@humain.vc`** from
-`no-reply@didi.sh`. That gets you back into **Palmer AI's wiki**, which had been
-unreachable since 2026-07-27.
+**Copy Reach's Outline secrets into your password manager.** Open
+`client-stacks/reach-edu/outline/.env` and save `SECRET_KEY`, `UTILS_SECRET`,
+and `PG_DATABASE_PASSWORD`.
 
-A second link went to `mstaton@reach.edu` for Reach's wiki — click that too.
+Those three exist on ONE machine, in a gitignored folder, with no copy anywhere.
+Losing that directory loses the instance — the same failure mode that cost env
+vars on 2026-05-12. It's a copy-paste, and it's the largest remaining risk in
+this repo.
 
-If either expired, ask for a resend. Nothing else is urgent. Nothing is broken.
+Nothing else is urgent. Nothing is broken.
+
+## ✅ Cleared 2026-08-08 — Palmer AI recovered
+
+Magic link clicked; `lastActiveAt` confirmed 22:54Z. Palmer AI's wiki was
+unreachable 2026-07-27 → 2026-08-08 because no auth provider was set at deploy
+time. Nothing was lost — workspace, docs, and user were all intact the whole
+time. Reach's link was sent to `mstaton@reach.edu` at the same time.
 
 ## ✅ Done (no action needed)
 
@@ -46,17 +56,13 @@ If either expired, ask for a resend. Nothing else is urgent. Nothing is broken.
 
 ## ⏸ Parked — pick up whenever, in this order
 
-1. **Copy Reach's Outline secrets to your password manager.** `SECRET_KEY`,
-   `UTILS_SECRET`, `PG_DATABASE_PASSWORD` in
-   `client-stacks/reach-edu/outline/.env` exist on ONE machine in a gitignored
-   folder. This is the largest remaining risk and it's a copy-paste.
-2. **Reach's Outline backup cron.** Fully scoped — Reach already has the R2
+1. **Reach's Outline backup cron.** Fully scoped — Reach already has the R2
    bucket and a working `pg-dump-twenty` to clone. Just needs doing.
-3. **The corpora question.** You said "reach-edu is not loading the corpora I
+2. **The corpora question.** You said "reach-edu is not loading the corpora I
    already have built in for it" and we never got back to it. Unclear whether
    you meant the Outline wiki (currently 1 collection: "Funders"), the local
    Chroma corpora, or `client-stacks/reach-edu/context-v/`.
-4. **One Resend key is shared** by id-didi-sh, augment-it, and three wikis.
+3. **One Resend key is shared** by id-didi-sh, augment-it, and three wikis.
    Revoking it breaks every login at once. Worth per-service keys eventually.
 
 ## 🔭 The open design thread
