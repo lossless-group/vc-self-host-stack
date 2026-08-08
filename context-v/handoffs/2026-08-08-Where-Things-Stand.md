@@ -1,6 +1,6 @@
 ---
 title: "Where things stand — self-host-stack, 2026-08-08"
-lede: "Read this first when you come back to this repo. One action is waiting on you; everything else is done or parked."
+lede: "Read this first when you come back to this repo. Nothing is waiting on you right now — this says what landed and what is parked."
 date_created: 2026-08-08
 date_modified: 2026-08-08
 authors:
@@ -18,25 +18,25 @@ tags:
 
 # Where things stand
 
-## ⬜ DO THIS FIRST (2 minutes)
+## ✅ NOTHING IS WAITING ON YOU
 
-**Copy Reach's Outline secrets into your password manager.** Open
-`client-stacks/reach-edu/outline/.env` and save `SECRET_KEY`, `UTILS_SECRET`,
-and `PG_DATABASE_PASSWORD`.
+As of 2026-08-08 every item that needed a human is closed. Palmer AI is
+recovered, all three wikis can be logged into and can send invitations, and
+Reach's Outline secrets are backed up to the password manager.
 
-Those three exist on ONE machine, in a gitignored folder, with no copy anywhere.
-Losing that directory loses the instance — the same failure mode that cost env
-vars on 2026-05-12. It's a copy-paste, and it's the largest remaining risk in
-this repo.
+Pick from the **Parked** list below whenever you want. Nothing is broken and
+nothing is time-sensitive.
 
-Nothing else is urgent. Nothing is broken.
-
-## ✅ Cleared 2026-08-08 — Palmer AI recovered
+## ✅ Cleared 2026-08-08
 
 Magic link clicked; `lastActiveAt` confirmed 22:54Z. Palmer AI's wiki was
 unreachable 2026-07-27 → 2026-08-08 because no auth provider was set at deploy
 time. Nothing was lost — workspace, docs, and user were all intact the whole
 time. Reach's link was sent to `mstaton@reach.edu` at the same time.
+
+**Secrets backed up.** Reach's `SECRET_KEY`, `UTILS_SECRET`, and
+`PG_DATABASE_PASSWORD` are now in the password manager, closing the
+single-copy-on-one-machine risk.
 
 ## ✅ Done (no action needed)
 
