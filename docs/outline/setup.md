@@ -53,11 +53,47 @@ Railway project: <client>
 5. **Verify by browser-drive:** root URL shows the first-run **"Create
    workspace"** screen (workspace name + admin name/email) — v1.9+ needs NO
    auth provider for bootstrap. Operator completes it live — the gate.
-6. **Auth provider for subsequent logins** — one of:
-   - Google OAuth: `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` (operator mints
-     in GCP console; redirect URI `<URL>/auth/google.callback`)
-   - SMTP magic links: `SMTP_HOST/PORT/USERNAME/PASSWORD/FROM_EMAIL`
-     (Plunk once deployed, or any provider)
+6. **Auth provider for subsequent logins — DO THIS AT DEPLOY TIME, not later.**
+   Without it the workspace is reachable only through the browser session that
+   created it; when that ends, nobody can get back in. palmer-ai sat locked out
+   from 2026-07-27 to 2026-08-08 for exactly this reason.
+
+   **Standard answer (settled 2026-08-08): Resend SMTP, sending as
+   `no-reply@didi.sh`.** Same five values on every client's `outline` service:
+
+   ```
+   SMTP_HOST=smtp.resend.com
+   SMTP_PORT=587
+   SMTP_USERNAME=resend
+   SMTP_PASSWORD=<the existing send-scoped RESEND_API_KEY>
+   SMTP_FROM_EMAIL=no-reply@didi.sh
+   ```
+
+   - **Don't mint a new Resend key or add a domain.** The key already exists in
+     `ai-labs/id-didi-sh/.env` (also mirrored in `ai-labs/.env` and
+     `ai-labs/augment-it/.env` — same key), and `didi.sh` has been a verified
+     sending domain since 2026-07-06. Resend's free tier allows ONE domain;
+     adding `lossless.at` would cost money for no benefit.
+   - The key is **send-scoped** — `GET /domains` returns 401
+     `restricted_api_key`. That is correct and sufficient; SMTP only sends.
+   - **Sender is `didi.sh`, not `lossless.at`**, because didi.sh is the identity
+     plane. lossless.at is the portal clients browse; didi.sh is what signs them
+     in. The homebase page names the sender via `email_sender` in `clients.ts`
+     so a client knows which address is legitimately us.
+   - Google OAuth (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, redirect
+     `<URL>/auth/google.callback`) remains available as an *addition*. It is not
+     a substitute: our clients are separate orgs on unrelated domains, and an
+     unverified consent screen caps at 100 users and shows every client the same
+     app name.
+
+   **SMTP is not only about login.** Outline cannot send *invitations* without
+   it, so until this is set you cannot add a single teammate to the workspace.
+
+   **`guestSignin` needs no manual flip** (verified on all three instances
+   2026-08-08). It reads `False` before SMTP and flips to `True` on the first
+   boot with SMTP present — no `team.update` call required. Before SMTP,
+   `POST /auth/email` 404s because the provider isn't mounted; after, it returns
+   `{"success":true}`. Those two checks are the fastest way to confirm.
 7. **API key** (the point of picking Outline): mint in-app after login →
    record as `OUTLINE_API_KEY` in the client `.env`; wire MCP from there.
 8. **Write `client-stacks/<client>/outline/restore-runbook.md`.**
@@ -99,6 +135,19 @@ Railway project: <client>
   still reports `maxmemory-policy=noeviction` (the redis default when no
   maxmemory is set), `protected-mode=no`, `bind=* -::*`. Set it for uniformity
   with the other bundles; it is not what makes the thing work.
+
+- **All three instances, SMTP rollout (2026-08-08):** one more `CONFIG_EPOCH`
+  subtlety, and it cost a wrong diagnosis. **Setting a variable that doesn't
+  exist yet does NOT mint a deployment; changing an existing one does.** On
+  palmer-ai and the-water-foundation, `CONFIG_EPOCH=1` printed nothing useful
+  and left the July container running with the old env — the SMTP vars were
+  set on the service but never reached the process, so `/auth/email` kept
+  404ing. Bumping to `=2` (a *change*) minted the deploy immediately.
+
+  Diagnose it with `railway deployment list --service outline --json` and read
+  the newest `createdAt`. If it predates your variable change, the running
+  container does not have your variables, no matter what `service status` says
+  — it will happily report SUCCESS for a months-old deployment.
 
   **Tooling floor: Railway CLI ≥5.30.** On 4.8.0, `railway logs <id>` returns
   "Deployment id does not exist" for every deployment, and there is no way to
