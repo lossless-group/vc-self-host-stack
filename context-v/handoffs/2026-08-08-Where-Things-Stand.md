@@ -46,6 +46,9 @@ single-copy-on-one-machine risk.
   - palmer-ai: `/crm` `/wiki`
   - reach-edu: `/crm` `/wiki` `/postiz`
   - lossless: `/crm`
+- **All three wikis on owned hosts** (`wiki.<client>.lossless.at`, 2026-08-09) —
+  Outline now *generates* clean share links instead of redirecting to a Railway
+  hostname. Requires one fresh sign-in per wiki; old links still resolve.
   - Vendor names work as nicknames (`/reach-edu/twenty` → `/reach-edu/crm`).
 - **Outline deployed for Reach University** — workspace created, API key minted
   and verified.
@@ -65,6 +68,10 @@ single-copy-on-one-machine risk.
    Chroma corpora, or `client-stacks/reach-edu/context-v/`.
 3. **One Resend key is shared** by id-didi-sh, augment-it, and three wikis.
    Revoking it breaks every login at once. Worth per-service keys eventually.
+4. **Which domain hosts what** — [[Which-Domain-Hosts-What-lossless-at-vs-didi-sh]].
+   Client apps have landed on both lossless.at and didi.sh by chronology rather
+   than rule. Nothing broken; the next deploy has nothing to follow. Deliberately
+   parked 2026-08-09.
 
 ## 🔭 The open design thread
 
