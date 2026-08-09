@@ -119,12 +119,13 @@ surface gets the clean path.
 1. **Vercel rewrites/edge proxy** — the portal already lives on Vercel; add
    rewrites for `/<client>/<service>/{mcp,api,.well-known,oauth}/*` → the backend,
    plus per-service `SERVER_URL` pointed at the path. Prototype on Twenty first.
-2. **Dedicated gateway service** (the Phase-2 "homebase-MCP") — **now specced as
-   [[Homebase-MCP-One-Connector-Per-Client]] (2026-08-09).** The token-stripping
-   measurement above makes this the only viable path for the MCP surface, and the
-   spec argues the id-didi-sh gate covers secrets/identity, not federation. — a small server that
-   federates Twenty (proxy) / Outline (OAuth) / Postiz + Papermark (service key),
-   and exposes both the clean paths and skills/scripts as MCP resources+prompts.
+2. **Dedicated gateway service** (the Phase-2 "homebase-MCP") — a small server
+   that federates Twenty (proxy) / Outline / Postiz / Papermark, and exposes both
+   the clean paths and skills as MCP resources + prompts.
+   **→ Now specced: [[Homebase-MCP-One-Connector-Per-Client]] (2026-08-09).**
+   The token-stripping measurement above promotes this from "an option" to the
+   only viable path for the MCP surface, and the spec argues the id-didi-sh gate
+   covers secrets/identity rather than federation.
    See `ai-labs/id-didi-sh` (D7, JWKS identity) and [[lossless-at-path-based-homebase]].
 3. **Clean host per service** (rejected aesthetically) — give each tool a real
    subdomain and set `SERVER_URL` to it. Sidesteps subpath-OAuth entirely but
