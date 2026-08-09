@@ -2,13 +2,13 @@
 title: "Normalize Paths Everywhere — one URL shape for every client + service"
 lede: "Today every tool lives at a raw Railway hostname; the goal is one owned, legible shape — lossless.at/<client>/<service>/… — for humans and agents alike."
 date_created: 2026-08-02
-date_modified: 2026-08-06
+date_modified: 2026-08-09
 authors:
   - Michael Staton
 augmented_with:
   - Claude Code on Claude Opus 4.8
   - Claude Code on Claude Opus 5
-semantic_version: 0.0.1.0
+semantic_version: 0.0.2.0
 status: Partially-Shipped
 date_first_published: 2026-08-06
 tags:
@@ -119,7 +119,10 @@ surface gets the clean path.
 1. **Vercel rewrites/edge proxy** — the portal already lives on Vercel; add
    rewrites for `/<client>/<service>/{mcp,api,.well-known,oauth}/*` → the backend,
    plus per-service `SERVER_URL` pointed at the path. Prototype on Twenty first.
-2. **Dedicated gateway service** (the Phase-2 "homebase-MCP") — a small server that
+2. **Dedicated gateway service** (the Phase-2 "homebase-MCP") — **now specced as
+   [[Homebase-MCP-One-Connector-Per-Client]] (2026-08-09).** The token-stripping
+   measurement above makes this the only viable path for the MCP surface, and the
+   spec argues the id-didi-sh gate covers secrets/identity, not federation. — a small server that
    federates Twenty (proxy) / Outline (OAuth) / Postiz + Papermark (service key),
    and exposes both the clean paths and skills/scripts as MCP resources+prompts.
    See `ai-labs/id-didi-sh` (D7, JWKS identity) and [[lossless-at-path-based-homebase]].

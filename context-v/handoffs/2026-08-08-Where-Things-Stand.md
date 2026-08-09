@@ -82,7 +82,12 @@ BYO-key custody) are all **secrets/identity** questions. A proxy that forwards
 each tool's own OAuth holds no secrets, so none of them apply. Two things got
 fused under one word and the gate froze both.
 
-**Not yet written up as a proper exploration** — that was the offer on the table.
+**Now specced (2026-08-09):**
+[[Homebase-MCP-One-Connector-Per-Client]] in `context-v/specs/`. Draft, awaiting
+sign-off on seven proposed decisions (H1–H7). The load-bearing bet is **H2** —
+using each client's own Twenty as the OAuth authorization server, which is what
+removes the id-didi-sh dependency for v1. Phase 0 exists to kill that assumption
+in days rather than weeks.
 
 ## Reference — what's where
 
