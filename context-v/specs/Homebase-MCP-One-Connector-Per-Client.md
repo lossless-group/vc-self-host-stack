@@ -96,8 +96,33 @@ Each needs sign-off before implementation.
 | **H3** | **One connector per client, not per service.** `lossless.at/<client>/mcp`. | The whole point. Per-service paths remain as human links. |
 | **H4** | **Tools are namespaced by service** — `twenty_*`, `outline_*`, `postiz_*`, `dataroom_*`. | An agent traversing services needs to know which system it is touching, and name collisions across four products are certain otherwise. |
 | **H5** | **Credentials live in homebase's environment, never in the transcript.** Agents receive capabilities; no tool ever returns a secret value. | The parent exploration's reframe: *distribute capabilities, not secrets*. |
-| **H6** | **Skills ship as MCP prompts, sourced from `context-v/agent-skills/`.** | Makes our accumulated know-how executable by the client's own agent instead of trapped in our repo. |
+| **H6** | **Skills ship as MCP prompts, sourced from `context-v/agent-skills/`.** | Makes our accumulated know-how executable by the client's own agent instead of trapped in our repo. **Prototyped 2026-08-09 without homebase** — see below. |
 | **H7** | **Read-only in Phase 1–2; writes gated behind explicit confirmation from Phase 3.** | Not a read-only ceiling (D5 forbids that) — a **sequencing** choice, so the connector matrix is proven before an agent can mutate a client's CRM. |
+
+## Prior art — the Skills plane already works, crudely (2026-08-09)
+
+Before building anything, the Skills plane was proven end-to-end using Outline as
+the store: `vc-firm-profile-ingest` was published into Palmer AI's wiki in an
+**Agent Playbooks** collection, then enumerated and read back over MCP from a
+different client. It works today, with no new service.
+
+Two findings that carry into the real build:
+
+1. **Enumerate cheap, load lazily.** Outline exposes both `list_templates`
+   (returns every template's **full body inline**) and
+   `list_collection_documents` (returns titles + ids only, then `fetch` per doc).
+   Templates look like the closer analogue to MCP prompts, but they invert the
+   cost model: asking "what playbooks exist?" would load every body. **Homebase's
+   `prompts/list` must return names and descriptions only**, with the body
+   materialized on `prompts/get`. The MCP spec already works this way; the point
+   is not to "improve" on it by inlining.
+2. **Publishing forks the source.** The Outline copy is what agents load, the git
+   copy is what we edit, and nothing reconciles them. This is precisely the
+   problem homebase removes by serving `context-v/agent-skills/` directly — and
+   it is the argument for open question #4 resolving toward **fetch at runtime**
+   rather than bake-at-build.
+
+Until homebase ships, the discipline is: **edit in git, re-publish to Outline.**
 
 ## Architecture
 
