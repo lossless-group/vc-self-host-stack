@@ -56,8 +56,9 @@ single-copy-on-one-machine risk.
 
 ## ⏸ Parked — pick up whenever, in this order
 
-1. **Reach's Outline backup cron.** Fully scoped — Reach already has the R2
-   bucket and a working `pg-dump-twenty` to clone. Just needs doing.
+1. **Reach's Outline `restore-runbook.md`.** The backup cron is live and proven
+   to write (2026-08-09); nobody has proven it *restores*. Mirror
+   `client-stacks/the-water-foundation/twenty/restore-runbook.md`.
 2. **The corpora question.** You said "reach-edu is not loading the corpora I
    already have built in for it" and we never got back to it. Unclear whether
    you meant the Outline wiki (currently 1 collection: "Funders"), the local
