@@ -84,9 +84,14 @@ runs with both disabled.
      canvas),
      `SERVER_URL=<domain>`, `ENCRYPTION_KEY=<gen>`, `STORAGE_TYPE=s3`,
      `STORAGE_S3_NAME/REGION/ENDPOINT/ACCESS_KEY_ID/SECRET_ACCESS_KEY` from
-     the bucket credentials
+     the bucket credentials,
+     `EMAIL_DRIVER=SMTP` + `EMAIL_SMTP_HOST/PORT/USER/PASSWORD` +
+     `EMAIL_FROM_ADDRESS` + `EMAIL_FROM_NAME` + `EMAIL_SYSTEM_ADDRESS`
+     (**not optional — see the email section below**)
    - `twenty-worker`: same as server minus `NODE_PORT`, plus
-     `DISABLE_DB_MIGRATIONS=true`, `DISABLE_CRON_JOBS_REGISTRATION=true`
+     `DISABLE_DB_MIGRATIONS=true`, `DISABLE_CRON_JOBS_REGISTRATION=true`.
+     The `EMAIL_*` block belongs here **too** — the worker is what actually
+     sends. A server-only email config looks correct and delivers nothing.
 8. **Watch first boot:** poll deployments/logs until `twenty-server` is
    healthy. Migrations on first boot take minutes. The worker may crash-loop
    until the server finishes migrating — that's the compose dependency order
@@ -95,6 +100,10 @@ runs with both disabled.
    load login page, create the first workspace/admin account (credentials from
    the operator, live), create a test Person + Company, confirm list views.
    Then the human logs in themselves — the gate.
+   **Also verify the SECOND user.** Invite someone and confirm the mail
+   actually arrives. The first admin never exercises the email path, so a
+   broken one stays invisible until a second stakeholder is handed the URL
+   — which is precisely how it went undetected on four instances.
 10. **Write `client-stacks/<client>/twenty/restore-runbook.md`** before
     backups exist: services, volumes, what a from-scratch redeploy needs.
 
@@ -128,10 +137,63 @@ integration 401s unexpectedly.
 
 Declared per client in `client-stacks/<client>/secretspec.toml` (bundle-prefixed
 declarations; runtime names in descriptions). Optional integrations (Google/
-Microsoft auth, calendar/messaging sync, SMTP) stay unset until a client asks.
+Microsoft auth, calendar/messaging sync) stay unset until a client asks.
+
+**SMTP is NOT one of them.** It used to be listed here as optional; that was
+wrong and it cost us a stranded stakeholder (see the-water-foundation delta
+below). Set it during initial deployment, every time.
+
+## Email — required, not optional
+
+Twenty's `EMAIL_DRIVER` defaults to `LOGGER`
+(`packages/twenty-server/src/engine/core-modules/twenty-config/config-variables.ts:320`).
+Leaving it unset does **not** disable email — it renders every message into the
+container's stdout and drops it. No error, no bounce, no queue failure. The
+deployment looks perfectly healthy.
+
+That matters more than it sounds, because Twenty gates the second user:
+
+- With `IS_MULTIWORKSPACE_ENABLED` unset (default false) there is no self-serve
+  "create a workspace" path.
+- With only `password` in `authProviders`, there's no magic-link fallback.
+- So joining an existing workspace **requires an invite token**, which is
+  delivered by exactly one channel: email.
+
+No email ⇒ no second user, ever. And password reset is dead by the same
+mechanism, so any member who forgets a password is locked out permanently with
+no recovery path.
+
+Canonical settings (Resend, sender on the identity plane `didi.sh`, matching
+`email_sender` in `hubs/lossless-at/src/config/clients.ts`):
+
+```
+EMAIL_DRIVER=SMTP
+EMAIL_SMTP_HOST=smtp.resend.com
+EMAIL_SMTP_PORT=587
+EMAIL_SMTP_USER=resend            # note: Outline calls this SMTP_USERNAME
+EMAIL_SMTP_PASSWORD=<send-scoped Resend key>
+EMAIL_FROM_ADDRESS=no-reply@didi.sh
+EMAIL_FROM_NAME=<Client> CRM
+EMAIL_SYSTEM_ADDRESS=no-reply@didi.sh
+```
+
+On **both** `twenty-server` and `twenty-worker`. Verify with a real send, not
+by reading back the variables — config present and mail leaving the box are
+different claims.
 
 ## Deltas observed per deployment
 
+- **the-water-foundation (2026-08-14) — the email gap, found the hard way:**
+  a second stakeholder could neither log in nor create an account. Cause: no
+  `EMAIL_*` vars on either service, so invitations rendered into the worker's
+  deploy log instead of sending. The first stakeholder had been onboarded by
+  hand-delivering her link, which masked the problem for eight days. Fixed by
+  setting the block above on both services, `CONFIG_EPOCH` → 2.
+  **The doc was complicit:** SMTP was listed under "optional integrations…
+  until a client asks," so all four instances shipped without it. The other
+  three (`lossless`, `palmer-ai`, `reach-edu`) have no `EMAIL_*` in their
+  recovery `.env` either — unverified against live Railway, but presumed
+  stranded the same way and worth a sweep.
 - **ALL DEPLOYMENTS — Railway redeploy gotcha (2026-07-27):** `railway
   redeploy` re-runs the PREVIOUS deployment spec — start-command, healthcheck,
   and other service-config changes made since are SILENTLY DROPPED (proven
