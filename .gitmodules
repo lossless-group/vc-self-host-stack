@@ -16,3 +16,6 @@
 [submodule "hubs/lossless-at"]
 	path = hubs/lossless-at
 	url = https://github.com/lossless-group/lossless-at.git
+[submodule "core/plane"]
+	path = core/plane
+	url = https://github.com/makeplane/plane.git

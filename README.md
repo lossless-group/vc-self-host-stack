@@ -25,6 +25,7 @@ Setup and management available on request from [The Lossless Group](https://loss
 | **[plunk](./core/plunk)** — open-source email platform; transactional sends, marketing campaigns, and automation workflows in one, AWS SES backend, Docker-deployable, AGPL-3.0 | Mailchimp ($1.6k–$4.2k/yr), Kit/ConvertKit ($1.1k–$2.4k/yr), SendGrid/Resend (transactional) | $1k–$4k/yr |
 | **[postiz-app](./core/postiz-app)** — open-source social media scheduling; one composer → many channels (X, LinkedIn, Instagram, Facebook, TikTok, YouTube, Mastodon, Bluesky), AI copy/design, per-post analytics, team collaboration, unlimited users, AGPL-3.0 | Hootsuite ($1.2k–$3k/yr), Buffer ($2.4k/yr), Sprout Social ($199+/seat/mo) | $1.2k–$5k/yr |
 | **[karakeep](./core/karakeep)** — self-hostable bookmark-everything app (links, notes, images) with AI-based automatic tagging and full-text search; multi-user with an admin panel for account creation and role management, AGPL-3.0 | Raindrop.io Pro ($36/yr), Pocket/Instapaper Premium ($36–$60/yr) | $540–$900/yr (15 users) |
+| **[plane](./core/plane)** — Linear-shaped issue tracking; cycles, modules, intake, five layouts, and — decisively — the full REST API, webhooks and personal access tokens in the **free** community edition, plus an official MCP server, AGPL-3.0 | Linear Standard ($8/seat/mo) → Business ($14/seat/mo), Jira ($8–$16/seat/mo) | $1.4k–$2.5k/yr (15 users) |
 
 ## Live in production today (managed tier)
 
@@ -195,6 +196,46 @@ Scheduling automation that eliminates email back-and-forth for investor meetings
 **Annual savings (15-person team):** $1.3k–$4k vs. Teams or Enterprise tiers. Add ~$2.7k/yr if replacing Doodle Business at the same scale.
 
 > **A note on Cal.com's 2026 license change.** In April 2026, Cal.com moved its commercial codebase closed-source, citing AI-era code-security concerns industry-wide. The formerly-open community edition was split off as a new project, **[Cal.diy](https://cal.diy)** (MIT license, self-host-only — "use at your own risk," no managed-cloud counterpart). Self-hosting the old Cal.com Enterprise edition now requires an active paying Cal.com relationship and a private-repo invite; it is **no longer a $0, genuinely open-source path**. We're tracking **[Tymeslot](https://github.com/Tymeslot/tymeslot)** as the leading ground-up alternative that emerged from this shift — see `context-v/explorations/Watchlist-Interesting-Tools.md` for the full evaluation.
+
+### Project & Issue Tracking
+
+Where the work itself is tracked — diligence checklists, portfolio-support
+tasks, platform requests from founders, and the firm's own internal build. The
+lane Linear and Jira own.
+
+| Proprietary Vendor | Pricing | Self-Hosted Alternative | Licensing Cost |
+|---|---|---|---|
+| **Linear Standard** | $8/user/month | **Plane** ⭐ *our pick* — Linear-shaped issue tracking: cycles, modules, intake, estimates, pages, and all five layouts (list, board, calendar, Gantt, spreadsheet). The community edition ships the **full REST API, webhooks and personal access tokens for free**, plus an official MCP server | $0 |
+| **Linear Business** | $14/user/month | *(see Plane above)* | $0 |
+| **Jira Standard / Premium** | ~$8–$16/user/month | *(see Plane above)* — Plane covers the issue-tracking core without Jira's configuration surface | $0 |
+
+**Annual savings (15-person firm):** ~$1.4k–$2.5k/yr vs. Linear; more against
+Jira Premium at the same headcount. Modest in absolute terms — the real argument
+here is the same one as everywhere else on this page: adding the advisor, the
+intern and the fractional PM costs nothing.
+
+> **Why Plane and not the alternatives.** The disqualifying test in this
+> category is API gating, not features. Plenty of open-core project tools put
+> API access or tokens behind a commercial licence — and agent access is a
+> headline feature of every Lossless stack, so that is fatal regardless of how
+> good the UI is. It is exactly why **Docmost** lost the knowledge-management
+> slot to Outline. Plane passes: API, webhooks and PATs are free and
+> self-hosted, and it ships a first-party MCP server on top.
+>
+> **Huly** (EPL-2.0, 27k★) is the other serious contender — issues plus docs,
+> chat and calendar in one app. We are not adopting it because it overlaps
+> Outline, which is already deployed for three clients; taking it would mean
+> running two wikis or reversing a settled decision. Tracked as a thesis
+> comparison, not a drop-in.
+>
+> **Tegon** appears in current listicles as a live open-source Linear
+> alternative. It is **archived** (last pushed 2025-03-30). Don't.
+
+> **What Plane's community edition does NOT include**, stated plainly because it
+> collides with the single-front-door story: **SSO, RBAC, approvals, audit
+> trails, epics, project templates and time tracking are commercial-only.** A
+> self-hosted Plane keeps its own login rather than sitting behind Authentik with
+> everything else. That is the one real asterisk on this row.
 
 ### Database & Workflow Applications
 
