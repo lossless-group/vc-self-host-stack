@@ -48,3 +48,7 @@ hub/.astro/
 
 # Playwright MCP session artifacts
 .playwright-mcp/
+
+# Processed images awaiting/after CDN upload — the CDN is the source of truth
+# for served bytes; these are local working copies. See prep-images-for-embed.
+.image-staging/
