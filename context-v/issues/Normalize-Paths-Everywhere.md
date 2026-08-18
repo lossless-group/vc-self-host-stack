@@ -19,6 +19,10 @@ tags:
   - MCP
   - Reverse-Proxy
   - lossless.at
+site_uuid: c736b2b7-86d5-40d7-8002-a74e50946386
+hex_code: 8tl9vg
+date_authored_initial_draft: 2026-08-09
+date_authored_current_draft: 2026-08-09
 ---
 
 # Normalize Paths Everywhere

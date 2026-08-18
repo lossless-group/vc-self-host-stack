@@ -3,6 +3,10 @@ title: "lossless.at path-based homebases + /<client>/<service>/api gateway"
 date_created: 2026-08-02
 status: Open
 tags: [Decision, lossless.at, Homebase, Gateway, MCP, Portal]
+site_uuid: 41823721-6ed5-4e74-ad59-67a42c55d210
+hex_code: hbsw0t
+date_authored_initial_draft: 2026-08-02
+date_authored_current_draft: 2026-08-02
 ---
 
 # lossless.at path-based homebases + `/<client>/<service>/api`

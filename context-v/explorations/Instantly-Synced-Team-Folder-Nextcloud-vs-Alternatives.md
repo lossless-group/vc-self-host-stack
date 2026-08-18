@@ -16,6 +16,10 @@ tags:
   - Syncthing
   - Team-Collaboration
 status: Open
+site_uuid: 9cca8c1b-2353-42cb-ad3f-37204e402daf
+hex_code: 2jtxtp
+date_authored_initial_draft: 2026-07-08
+date_authored_current_draft: 2026-07-08
 ---
 
 # An Instantly-Synced Shared Folder for a 3-Person Team

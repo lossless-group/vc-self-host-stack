@@ -1,6 +1,6 @@
 ---
 title: "Per-Client Stack Deployment — Twenty First (reach-edu, then palmer-ai)"
-lede: "The PM-to-lead-engineer handoff spec: stand up Twenty CRM for two clients on Railway using the project-per-client / bundle-per-app pattern, wire operator MCP access, ship backups, and stage the runway to homebase — phase by phase, with a verification gate at every step."
+lede: "Stand up Twenty CRM for reach-edu, then palmer-ai, on Railway project-per-client — phase by phase, with a verification gate at every step."
 date_created: 2026-07-24
 date_modified: 2026-07-24
 authors:
@@ -17,6 +17,10 @@ tags:
   - Client-Operations
   - Homebase
   - MCP
+site_uuid: 9c74063a-139c-4de2-8dda-50edb2ec22fb
+hex_code: o8znnz
+date_authored_initial_draft: 2026-07-24
+date_authored_current_draft: 2026-07-24
 ---
 
 # Per-Client Stack Deployment — Twenty First

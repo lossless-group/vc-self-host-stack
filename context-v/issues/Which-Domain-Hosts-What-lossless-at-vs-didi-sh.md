@@ -16,6 +16,10 @@ tags:
   - didi.sh
   - DNS
   - Naming
+site_uuid: e7e11399-39df-42c9-a015-023710befc3f
+hex_code: ox6bti
+date_authored_initial_draft: 2026-08-09
+date_authored_current_draft: 2026-08-09
 ---
 
 # Which domain hosts what
