@@ -2,6 +2,7 @@
 # Each client's actual deployment (real .env, real domain, real DB credentials) lives here
 # but is intentionally not tracked. Reconstruct from core/ recipes + the client's backup.
 client-stacks/
+context-v/extra/*
 
 # Secrets — every tool under core/ has its own .env
 .env
