@@ -19,6 +19,7 @@ site_uuid: b27828ce-24da-4c10-8aa9-bbdbea255d19
 hex_code: dch8d1
 date_authored_initial_draft: 2026-07-25
 date_authored_current_draft: 2026-07-25
+publish: false
 ---
 
 # Pickup — After the Twenty-First Deployment Session

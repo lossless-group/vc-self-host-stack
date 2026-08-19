@@ -17,6 +17,7 @@ site_uuid: 430f6b9f-cd48-4eee-ab4e-11ea1d412aea
 hex_code: 0x2vkx
 date_authored_initial_draft: 2026-07-18
 date_authored_current_draft: 2026-07-18
+publish: true
 ---
 
 # Watchlist — Interesting Tools Not Yet Sorted

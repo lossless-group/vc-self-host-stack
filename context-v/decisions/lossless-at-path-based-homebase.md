@@ -7,6 +7,7 @@ site_uuid: 41823721-6ed5-4e74-ad59-67a42c55d210
 hex_code: hbsw0t
 date_authored_initial_draft: 2026-08-02
 date_authored_current_draft: 2026-08-02
+publish: true
 ---
 
 # lossless.at path-based homebases + `/<client>/<service>/api`

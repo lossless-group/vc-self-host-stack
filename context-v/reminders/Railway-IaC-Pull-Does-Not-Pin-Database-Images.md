@@ -19,6 +19,7 @@ site_uuid: dffe18e3-c0a5-4a93-baf0-23ce7cff8a4c
 hex_code: w7jdux
 date_authored_initial_draft: 2026-08-09
 date_authored_current_draft: 2026-08-09
+publish: true
 ---
 
 # `railway config pull` does not pin database images

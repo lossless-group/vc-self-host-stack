@@ -1,6 +1,7 @@
 ---
 name: custom-domain-cutover
 description: Point a custom (sub)domain at a Railway service and survive the cutover — DNS records, wildcard overrides, cert issuance, and the stale-cache theater that follows. Use whenever minting a `*.didi.sh` (or any custom) domain for a client hub/app, whenever a freshly-cut domain "doesn't work" on someone's machine while probes say it's live, or whenever the user says "I can't see the subdomain."
+publish: true
 ---
 
 # custom-domain-cutover

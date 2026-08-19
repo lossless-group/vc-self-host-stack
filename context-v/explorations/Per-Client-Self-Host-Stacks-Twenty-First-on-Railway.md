@@ -22,6 +22,7 @@ site_uuid: 07ee6d72-d3bb-486b-a661-789560f2d8f4
 hex_code: jz90sd
 date_authored_initial_draft: 2026-07-24
 date_authored_current_draft: 2026-07-24
+publish: true
 ---
 
 # Per-Client Self-Host Stacks, Twenty-First, on Railway
