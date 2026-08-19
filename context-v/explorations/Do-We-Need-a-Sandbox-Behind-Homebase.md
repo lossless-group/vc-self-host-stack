@@ -1,18 +1,21 @@
 ---
 title: "Do we need a sandbox behind homebase?"
-lede: "Homebase federates tools but runs no code. The jobs clients actually want — rename these files, tidy this portfolio data — need a filesystem, and there are four places to get one."
+lede: "Homebase federates tools but stores nothing and runs nothing. The missing piece turns out to be two pieces — storage, which is already funded, and compute, which can wait."
 date_created: 2026-08-18
-date_modified: 2026-08-18
+date_modified: 2026-08-19
 authors:
   - Michael Staton
 augmented_with:
   - Claude Code on Claude Opus 5
-at_semantic_version: 0.0.0.1
+at_semantic_version: 0.0.1.0
 tags:
   - Exploration
   - Homebase
   - MCP
   - Sandbox
+  - Object-Storage
+  - Cloudflare-R2
+  - Papermark
   - Managed-Agents
   - Self-Host-Stack
   - AI-Agent-Infrastructure
@@ -20,7 +23,7 @@ status: Open
 site_uuid: 7ccba464-3ec2-4bb7-acb8-4a78d1c7aa93
 hex_code: 1lt6do
 date_authored_initial_draft: 2026-08-18
-date_authored_current_draft: 2026-08-18
+date_authored_current_draft: 2026-08-19
 publish: true
 ---
 
@@ -93,6 +96,93 @@ Against humain's actual worklist:
 
 Note how much falls on the "no" side. **A meaningful share of the promise ships
 without any of this** — worth knowing before spending on compute.
+
+## Storage is not compute — and it's the nearer need (2026-08-19)
+
+The first real request that *looked* like it needed the sandbox turned out not
+to, and the distinction it exposed is worth making structural.
+
+**The case.** Decile's organization card has a `Deck url` custom data point. It
+wants a **URL** — not a file upload. We had a portfolio company's deck on a local
+disk and needed it addressable. The instinct was "this is the sandbox problem, or
+we need a Google Drive connector."
+
+It is neither. Run the decision rule: *does the task need to produce or transform
+files, or run code the model writes?* **No.** It needs somewhere to put bytes and
+get an address back. That is **storage**, and storage is a different plane from
+compute:
+
+| Plane | Answers | Needed for |
+|---|---|---|
+| **Storage** | "where do the bytes live, and what's the URL?" | Deck urls, generated exports, anything with a link |
+| **Compute** | "where does code run over the bytes?" | Renaming batches, parsing PDFs, building the dashboard |
+
+Homebase's missing fourth plane is really **two** planes, and they have different
+urgency and completely different risk. Storage is boring, cheap, and needed now.
+Compute is the one with a model holding a shell, and it can wait.
+
+**The storage answer is already decided elsewhere.** Per-client **Cloudflare blob
+storage (R2)** is already planned for system backups. That means the storage
+plane needs no new architectural decision — it needs a second use case pointed at
+infrastructure the backup work is standing up anyway. S3-compatible, so the
+existing bucket muscle memory applies, and it supports **presigned expiring URLs**
+— which matters, because a portfolio company's pre-seed deck should not sit at a
+guessable public address.
+
+**Why not the alternatives considered in the moment:**
+
+- **A Google Drive MCP connector** — a new connector, new auth, and client files
+  living in a second place, to solve a problem that is one `PUT` and a URL. This
+  is precisely the divergence the parent reminder warns about: every connector
+  added is another thing that can be half-working, and Drive's sharing model is
+  either "anyone with the link" (same exposure, less control) or account-gated
+  (breaks for anyone outside the workspace).
+- **A sandbox** — nothing here runs code. Reaching for compute to solve a storage
+  problem is how the expensive plane gets built first for no reason.
+
+### Papermark is not an alternative to R2 — it's a layer on it
+
+Raised as an option: install Papermark for humain and take the URL from there.
+Worth separating, because they are not competing choices:
+
+```
+Papermark            ← a product: link + view analytics + access gates
+   └── S3-compatible object storage   ← R2. Papermark needs this either way.
+```
+
+Standing up Papermark does not avoid the storage decision; it *consumes* it. If
+R2 lands for backups, Papermark later sits on the same bucket.
+
+**But not for this case, and three facts say so:**
+
+1. **`Deck url` is empty on every organization checked** (Heartio, Percept
+   Biosciences, Somite, Tactogen). It is not a convention the firm maintains.
+   Building infrastructure to populate a field nobody populates is backwards —
+   and the observed practice is different anyway: Heartio's *website* field holds
+   `pitch.heartio.ai/b?y=…`, a DocSend-style link the **company** sent. The field
+   wants the company's own hosted deck, not our copy of it.
+2. **Papermark's value is outbound.** Link analytics — who opened, how long per
+   page — is the DocSend replacement. An inbound deck held for internal
+   reference is never shared, so the tracking is dead weight.
+3. **It would be a first deployment, not an install.** `core/papermark/` is
+   vendored source, but `docs/` — what we have actually stood up — has no
+   papermark runbook. And the client in question runs **zero** self-hosted
+   services by design.
+
+**When Papermark *is* right:** when the firm needs to send **its own** fund deck
+to LPs with view tracking. That is a real need for any fundraising firm, it is
+the job Papermark exists for, and it is the moment the service earns its
+maintenance. Not before.
+
+**The generalizable rule:** when a field is empty across every existing record,
+that is evidence about the workflow, not a gap to engineer around. Read the
+neighbours before building.
+
+**Revision to this document's recommendation:** Option 0 ("ship connector-only")
+should be read as *connector + per-client object storage*. A meaningful share of
+what sounds like "the agent needs a computer" is really "we need a place to put a
+file and hand back a link" — and answering that well may shrink the compute case
+further before we ever have to decide it.
 
 ## Four places the compute could live
 
@@ -240,7 +330,11 @@ under real load.
    always-on Railway worker across N clients? Feeds homebase OQ#5.
 5. If a self-hosted sandbox is required for a client, does losing egress-side
    credential substitution push us back to Option 2 anyway?
-6. Does the memory-store primitive replace the "graph DB for context memory"
+6. Where does a company's deck actually belong — R2 with a presigned link,
+   Decile's own data room, or both? Decile is the system of record but
+   `create_personalized_link` mints **per-recipient** links, which is a sharing
+   primitive, not a stable internal address.
+7. Does the memory-store primitive replace the "graph DB for context memory"
    idea in the reminder, or are they different needs?
 
 ## Related
