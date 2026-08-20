@@ -53,6 +53,26 @@ paying clients, with the receipts in [`changelog/`](./changelog/):
   built so a non-technical person can just tell their AI "help me set this
   up." ChatGPT-side and mobile verification are in progress.
 
+- **Onyx (formerly Danswer) — AI chat + enterprise search, deployed
+  2026-08-20** for one client as a **1–2 month trial**. Nine Railway services
+  (API, Celery background, Next.js web, OpenSearch, Postgres, Redis, two model
+  servers, and an nginx path router) plus an object-storage bucket, all pinned
+  to `v4.5.6`. Its license, verified from source rather than GitHub's
+  "Other/NOASSERTION" metadata, is **MIT Expat** with `ee/` directories carved
+  out. Two reusable build artifacts came out of it and are committed, not
+  stranded in a client folder: a wrapper that makes OpenSearch survive
+  Railway's root-owned volumes, and a router that fixes upstream's
+  resolve-once-at-startup nginx. Runbook: [`docs/onyx/setup.md`](./docs/onyx/setup.md).
+
+  **Cost honesty:** this one runs **~$100–200/mo for a single client** — an
+  order of magnitude above Twenty and Outline combined, because OpenSearch
+  holds a 2GB JVM heap permanently and both model servers keep embedding
+  models resident. Railway is the right host for a reversible trial, not the
+  cheap long-term home; a ~€25/mo fixed-price box runs upstream's compose
+  unmodified for roughly a fifth. Everything Onyx stores (Postgres,
+  OpenSearch, object storage) is portable, and the runbook is what keeps that
+  migration cheap.
+
 Supported means supported: version-pinned images, written restore runbooks
 per client, and the deploy gotchas we actually hit (healthcheck `PORT`,
 `TRUST_PROXY` behind the proxy, gzipped-dump restores) are encoded in the

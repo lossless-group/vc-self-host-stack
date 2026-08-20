@@ -1,0 +1,130 @@
+# Onyx path router for Railway. Adapted from upstream
+# deployment/data/nginx/app.conf.template.prod (Onyx v4.5.6).
+#
+# Railway's edge can only forward a whole domain to ONE service, but Onyx
+# expects a single origin split by path: /api, /openapi.json, /scim and
+# /auth/saml go to the backend, everything else to the Next.js web server.
+# That split is this file's entire reason to exist.
+#
+# Three deliberate deviations from upstream:
+#   1. listen [::]:${PORT} ipv6only=off  — Railway assigns $PORT and reaches the
+#      container over IPv6; ipv6only=off also accepts IPv4 on the same socket.
+#   2. No `upstream` blocks. nginx resolves upstream{} names ONCE at startup, so
+#      a redeploy of onyx-api (which changes its private IP) would strand this
+#      router on a dead address, and a cold start would crash with
+#      "host not found in upstream". Using a variable in proxy_pass defers
+#      resolution to request time, against Railway's own DNS resolver.
+#   3. No TLS / certbot / port 443 — Railway's edge terminates TLS.
+
+server_tokens off;
+
+log_format custom_main '$remote_addr - $remote_user [$time_local] "$request" '
+                '$status $body_bytes_sent "$http_referer" '
+                '"$http_user_agent" "$http_x_forwarded_for" '
+                'rt=$request_time';
+
+# WebSocket support: only set Connection "upgrade" for actual upgrade requests
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen [::]:${PORT} default_server ipv6only=off;
+
+    client_max_body_size 5G;    # Maximum upload size
+
+    access_log /var/log/nginx/access.log custom_main;
+
+    # Railway's internal DNS. Injected by the entrypoint from /etc/resolv.conf.
+    # `valid=10s` keeps the router following services across redeploys.
+    resolver ${NGINX_RESOLVER} valid=10s ipv6=on;
+
+    set $onyx_api "${ONYX_BACKEND_API_HOST}";
+    set $onyx_web "${ONYX_WEB_SERVER_HOST}";
+
+    # Health probe served by nginx itself, so Railway's healthcheck reports on
+    # the router rather than on whichever upstream happens to be warm.
+    location = /nginx-health {
+        access_log off;
+        return 200 "ok\n";
+    }
+
+    # SAML login and IdP callbacks are backend routes. Without this the IdP's
+    # POST falls through to the web server.
+    location ~ ^/auth/saml(/.*)?$ {
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header Host $host;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+        proxy_redirect off;
+        proxy_pass http://$onyx_api;
+    }
+
+    location ~ ^/scim(/.*)?$ {
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header Host $host;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+        proxy_redirect off;
+        proxy_connect_timeout ${NGINX_PROXY_CONNECT_TIMEOUT}s;
+        proxy_send_timeout ${NGINX_PROXY_SEND_TIMEOUT}s;
+        proxy_read_timeout ${NGINX_PROXY_READ_TIMEOUT}s;
+        proxy_pass http://$onyx_api;
+    }
+
+    # Match both /api/* and /openapi.json in a single rule. The /api prefix is
+    # stripped before proxying; /openapi.json is passed through untouched.
+    location ~ ^/(api|openapi\.json)(/.*)?$ {
+        rewrite ^/api$ / break;
+        rewrite ^/api(/.*)$ $1 break;
+
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header Host $host;
+
+        # 1.1 is required for chunked transfers and WebSocket
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_buffering off;
+
+        proxy_connect_timeout ${NGINX_PROXY_CONNECT_TIMEOUT}s;
+        proxy_send_timeout ${NGINX_PROXY_SEND_TIMEOUT}s;
+        proxy_read_timeout ${NGINX_PROXY_READ_TIMEOUT}s;
+
+        proxy_redirect off;
+        proxy_pass http://$onyx_api;
+    }
+
+    location / {
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header Host $host;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        proxy_connect_timeout ${NGINX_PROXY_CONNECT_TIMEOUT}s;
+        proxy_send_timeout ${NGINX_PROXY_SEND_TIMEOUT}s;
+        proxy_read_timeout ${NGINX_PROXY_READ_TIMEOUT}s;
+
+        proxy_redirect off;
+        proxy_pass http://$onyx_web;
+    }
+}
