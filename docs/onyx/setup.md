@@ -171,7 +171,55 @@ Only `onyx-nginx` gets a domain. Everything else stays private.
    inverted: auth is configured at deploy time here, so close it out at deploy
    time too.
 
-10. **Add an LLM provider** in Settings → the instance is inert without one.
+10. **Turn ON invite-only.** `invite_only_enabled` defaults to **`False`**
+    (`backend/onyx/server/settings/models.py`), which means ANY visitor who
+    finds the URL can self-register. This is a runtime setting in the KV store,
+    NOT an env var, so it can only be set in the admin UI (Settings →
+    Workspace) after an admin exists. Between deploy and this step the instance
+    is an open door — do both in the same sitting.
+
+11. **Email (SMTP).** Required for invite emails, password reset, and email
+    verification. Onyx reads `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USER`,
+    `SMTP_PASS`, `SMTP_STARTTLS`, `EMAIL_FROM`.
+
+    **Two gotchas.** `EMAIL_CONFIGURED` is derived —
+    `bool(SMTP_SERVER) and bool(EMAIL_FROM)` — so `EMAIL_FROM` is not optional
+    even though it silently defaults to `SMTP_USER` (which for Resend is the
+    literal string `resend`, not an address). And **`ENABLE_EMAIL_INVITES`
+    defaults to `false`**: with SMTP perfectly configured but this flag unset,
+    invites are still created and the UI reports `NOT_CONFIGURED`/`DISABLED`
+    rather than sending anything. Set it to `true` explicitly.
+
+    Lossless clients share the Resend SMTP sender already used by Outline
+    (`smtp.resend.com:587`, user `resend`, password = Resend API key,
+    `EMAIL_FROM=no-reply@didi.sh`). Verify credentials WITHOUT sending mail:
+
+    ```bash
+    python3 -c "
+    import smtplib,ssl
+    s=smtplib.SMTP('smtp.resend.com',587,timeout=25); s.ehlo()
+    s.starttls(context=ssl.create_default_context()); s.ehlo()
+    s.login('resend','<resend-api-key>'); print('AUTH OK'); s.quit()"
+    ```
+
+    `REQUIRE_EMAIL_VERIFICATION` is deliberately left OFF. Turning it on before
+    deliverability is proven can lock every new user out — the same shape as the
+    Outline auth incident (2026-07-27 → 2026-08-08).
+
+12. **Add an LLM provider** in Settings → the instance is inert without one.
+
+### How invites actually work (they are not links)
+
+Onyx invites are an **allowlist entry, not a tokenised URL**. `bulk_invite_users`
+writes the address to the invited-users list regardless of whether mail sends;
+`verify_email_is_invited` then gates registration against that list. So the
+invitee signs up at the normal public URL using the invited address and a
+password of their own choosing.
+
+Practical consequence: **email delivery is a notification, not the access
+mechanism.** If SMTP misbehaves, the invited person can still get in — tell
+them the URL and which address to use. Conversely, an invite email arriving
+does not by itself prove the account is reachable.
 
 ## Cost — read before deploying for a client
 
