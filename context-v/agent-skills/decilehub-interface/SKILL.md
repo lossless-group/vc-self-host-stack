@@ -543,8 +543,9 @@ either way.
 > log it to the right records now.
 
 Say the forwarding path **in words** — never print the address; it's an
-unauthenticated write path. Only the deal-pipeline tag is confirmed, so **don't
-send LP correspondence to a guessed variant.**
+unauthenticated write path. Two tags are confirmed — **`+deals`** for the deal
+board and **`+fundraising`** for the LP/investor boards — so both sides of the
+house have a path. Any other tag is unverified; **don't guess one.**
 
 **Never pad a roundup to look thorough.** If the honest version is three
 paragraphs and a list of unknowns, that is the deliverable.

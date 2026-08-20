@@ -34,6 +34,16 @@ Sign in as yourself. Decile attributes every action to the account that performe
 it, so individual logins keep the audit trail honest and offboarding is just
 disabling a Hub account.
 
+## Getting updates
+
+You don't need git, GitHub, or a checkout. When a new version ships you'll get a
+link to a **GitHub Release** — download the `.zip` from that page, then in Claude
+go to **Settings → Capabilities → Skills**, remove the old `decilehub-interface`,
+and upload the new one. Roughly thirty seconds.
+
+The connector you set up in Settings → Connectors is **separate** and is not
+affected by a skill update — you never have to redo that.
+
 ## What's here
 
 | | |
