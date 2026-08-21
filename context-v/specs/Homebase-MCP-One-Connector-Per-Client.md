@@ -1,13 +1,13 @@
 ---
 title: "Homebase MCP — one connector per client, every tool behind it"
-lede: "A client adds one address to Claude and their agent can move across CRM, wiki, data room, and post planner in a single task — because one small service per client fronts them all, holds the credentials, and serves our skills as prompts."
+lede: "A client adds one address to Claude and their agent can move across CRM, wiki, data room, and post planner in a single task — because one plane fronts them all, authenticates them through didi.sh, holds the credentials, and serves our skills as both prompts and resources."
 date_created: 2026-08-09
-date_modified: 2026-08-09
+date_modified: 2026-08-20
 authors:
   - Michael Staton
 augmented_with:
   - Claude Code on Claude Opus 5
-semantic_version: 0.0.0.1
+semantic_version: 0.0.1.0
 status: Draft
 tags:
   - Spec
@@ -20,7 +20,7 @@ tags:
 site_uuid: c5166dc9-157d-4f2f-b448-84e7d005f477
 hex_code: p7y02f
 date_authored_initial_draft: 2026-08-09
-date_authored_current_draft: 2026-08-09
+date_authored_current_draft: 2026-08-20
 publish: true
 ---
 
@@ -66,7 +66,7 @@ separately is most of the design.
 |---|---|---|---|
 | **Tools** | Twenty's native MCP (proxied) + tools we write over Outline / Postiz / Papermark REST + BYO SaaS | Yes — acts *as* a person | Yes — per-service credentials |
 | **Context** | `context-v/` docs, stack records, service inventory, the connect guide | No | No |
-| **Skills** | `SKILL.md` files served as MCP **prompts** | No | No |
+| **Skills** | `SKILL.md` files served as MCP **prompts _and_ resources** (A2 — Onyx's MCP client does not read prompts) | No | No |
 
 Context and Skills are shippable with no identity story at all. Tools are where
 the real work is. **Phase order follows that gradient** — the cheap planes prove
@@ -83,7 +83,8 @@ From [[Per-Client-Stack-Deployment-Spec-Twenty-First]]:
   operations), never from read-only ceilings.
 - **D6** — remote connectors only. Claude Desktop, ChatGPT Desktop, Claude
   mobile, ChatGPT mobile — all day one. No local config, no terminal, ever.
-- **D7** — homebase is a small always-on container *inside the client's own
+- **D7** — ⚠️ *narrowed 2026-08-20 by A3: applies once a capability needs direct
+  database access; until then the plane may be central.* homebase is a small always-on container *inside the client's own
   Railway project*, so it reaches their databases over the private network while
   those databases stay dark to the internet.
 - **D8** — every client is a mixed stack. The plane fronts BYO SaaS too
@@ -97,12 +98,120 @@ Each needs sign-off before implementation.
 | # | Decision | Why |
 |---|---|---|
 | **H1** | **Proxy, never redirect.** Homebase terminates the MCP session same-origin and forwards upstream server-side. | Measured: cross-origin redirects strip `Authorization`. There is no redirect-shaped version of this. |
-| **H2** | **The client's own Twenty is the OAuth authorization server for homebase.** | Every client user already has a Twenty account, and Twenty already ships a working authorization server (verified: `/.well-known/oauth-authorization-server`, `/authorize`, `/oauth/token`). This gives per-user identity, per-client scoping, and offboarding-by-CRM-deactivation with **zero new identity infrastructure** — and it is what removes the id-didi-sh dependency for v1. didi.sh JWKS replaces it later without changing the client-facing URL. **This is the highest-risk assumption in the spec — Phase 1 exists to kill it early.** |
+| **H2** | ⛔ **SUPERSEDED 2026-08-20 by A1 — didi.sh is the authorization server.** ~~The client's own Twenty is the OAuth authorization server for homebase.~~ | Every client user already has a Twenty account, and Twenty already ships a working authorization server (verified: `/.well-known/oauth-authorization-server`, `/authorize`, `/oauth/token`). This gives per-user identity, per-client scoping, and offboarding-by-CRM-deactivation with **zero new identity infrastructure** — and it is what removes the id-didi-sh dependency for v1. didi.sh JWKS replaces it later without changing the client-facing URL. **This is the highest-risk assumption in the spec — Phase 1 exists to kill it early.** |
 | **H3** | **One connector per client, not per service.** `lossless.at/<client>/mcp`. | The whole point. Per-service paths remain as human links. |
 | **H4** | **Tools are namespaced by service** — `twenty_*`, `outline_*`, `postiz_*`, `dataroom_*`. | An agent traversing services needs to know which system it is touching, and name collisions across four products are certain otherwise. |
 | **H5** | **Credentials live in homebase's environment, never in the transcript.** Agents receive capabilities; no tool ever returns a secret value. | The parent exploration's reframe: *distribute capabilities, not secrets*. |
-| **H6** | **Skills ship as MCP prompts, sourced from `context-v/agent-skills/`.** | Makes our accumulated know-how executable by the client's own agent instead of trapped in our repo. **Prototyped 2026-08-09 without homebase** — see below. |
+| **H6** | ⚠️ **AMENDED 2026-08-20 by A2 — prompts AND resources.** Skills ship as MCP prompts *and* resources, sourced from `context-v/agent-skills/`. | Makes our accumulated know-how executable by the client's own agent instead of trapped in our repo. **Prototyped 2026-08-09 without homebase** — see below. |
 | **H7** | **Read-only in Phase 1–2; writes gated behind explicit confirmation from Phase 3.** | Not a read-only ceiling (D5 forbids that) — a **sequencing** choice, so the connector matrix is proven before an agent can mutate a client's CRM. |
+
+## Amendments — 2026-08-20 (`0.0.0.1` → `0.0.1.0`)
+
+Three decisions change. Read these **before** the table above; where they
+conflict, the amendment wins.
+
+### A1 — H2 is SUPERSEDED. didi.sh is the authorization server, not Twenty.
+
+**Ruling (Michael, 2026-08-20):** didi.sh is our own auth system for a *suite* of
+products, and self-host-stack is one product in that suite. Homebase authenticates
+against didi.sh.
+
+H2 picked Twenty specifically to *dodge* the id-didi-sh dependency for v1. That
+dependency is now taken on deliberately, which makes the dodge cost rather than
+save: Twenty-as-AS would build a client-facing identity path and then throw it
+away, and per H3 the client-facing URL never changes anyway, so there was nothing
+durable to gain.
+
+**What is already live** (measured 2026-08-20, not assumed):
+
+| Surface | State |
+|---|---|
+| `https://id.didi.sh/.well-known/jwks.json` | **200** — EdDSA / Ed25519 signing key |
+| `/api/me` | Returns `didi_id`, primary + alt emails, name, handle, avatar, **`memberships` with `org_id` + `role`**, session expiry. This *is* the `whoami` Phase 0 was going to write |
+| `/api/workspaces`, `/api/workspaces/:slug/join` | **Workspace scoping exists in code** — the unit the parent exploration names as where a key attaches |
+| `/api/magic-links` create + redeem, `/api/session/refresh` | Passwordless auth, live |
+
+The spec said "didi.sh JWKS replaces it later." It is not later. It is live.
+
+**The one real gap:** didi.sh has **no OAuth 2.1 authorization-server surface** —
+no `/authorize`, no token endpoint, no dynamic client registration, no AS
+metadata. Magic-link + JWKS makes didi.sh an excellent token *issuer and
+verifier*; it is not yet an *authorization server*, and OAuth-server semantics are
+what MCP clients speak. Already recorded at
+`id-didi-sh/context-v/explorations/Serving-Secrets-Server-Side-as-an-MCP-Capability-Plane.md`
+line 52, with two candidate paths — grow the endpoints in Phoenix, or exchange an
+existing `didi_session` for an MCP access token — and both gated on measuring
+what the desktop clients actually accept.
+
+**Consequence for Phase 0:** it is repointed at didi.sh and **merges with the
+parent's spike #1**. They were always the same experiment — stand up a stub MCP
+server, connect from the 2×2 client matrix, record which auth flows are accepted
+and whether resources and prompts surface — differing only in which authorization
+server sits behind it. They have been sitting in two repos blocking each other.
+Run once, against didi.sh, and both discharge.
+
+Note the matrix is **not empty**: cell #1 is already **PASS** (2026-07-25, parent
+Findings) — Claude Desktop → Twenty native MCP, full discovery → RFC 7591 DCR →
+PKCE → tool calls, with the `TRUST_PROXY=1` gotcha found and fixed. The OAuth
+*mechanics* are de-risked; what is unrun is that flow against didi.sh.
+
+### A2 — H6 is AMENDED. Skills ship as prompts **and** resources.
+
+**Measured 2026-08-20 against Onyx v4.5.6.** Onyx's MCP *client*
+(`backend/onyx/server/features/mcp/client.py`) calls `list_tools`, `call_tool`,
+and `list_resources`. There is **no `list_prompts` / `get_prompt`** anywhere in
+the codebase.
+
+H6 as written ships skills as prompts only. Claude Desktop would see them; **Onyx
+would see nothing** — and Onyx is now the team-facing UI (deployed for palmer-ai
+2026-08-20, `docs/onyx/setup.md`). Serve each `SKILL.md` as **both** a prompt
+(Claude Desktop, where prompts are user-invocable) and a resource (Onyx, which
+discovers resources). One source, two affordances. Decided now it is an
+afternoon; discovered later it is a rewrite of the plane.
+
+The Prior-art finding below still holds and now applies to both affordances:
+enumerate cheap, materialise the body on fetch.
+
+This also **partially answers OQ#2** for a client the question did not anticipate:
+for Onyx, **resources yes, prompts no.**
+
+### A3 — the D7 colocation test is NARROWED to "needs direct database access."
+
+D7 put homebase inside the client's Railway project. The parent exploration
+(OQ#2) gives the actual reason: colocation buys **private-network access to the
+client's databases** — "no public TCP proxy, no internet-reachable Postgres… it's
+what makes client-facing read/write/report database tools safe enough to
+contemplate."
+
+That is a narrower test than "tools." Applied to the current roster: Twenty,
+Outline, and Onyx all expose **HTTP APIs**; Decile and Streak are hosted SaaS.
+**Nothing we run today requires raw database access.** So the per-client container
+is *deferred*, not cancelled — it earns its existence the first time a capability
+needs SQL-level reach, and D7 governs from that moment.
+
+Until then the plane may be central, anchored on didi.sh.
+
+**This is not secret-pooling, and the D1/D2 objection does not apply.** Per the
+parent exploration, keys attach to **workspaces** — "a personal workspace carries
+a personal key; a team workspace carries the org-wide key" — with an admin UI
+where an account holder manages their own. That is *productised* custody with a
+per-tenant owner, not a shared pool. D1/D2 continue to govern the client
+**stacks** (one Railway project each, no shared datastore); they were never a
+statement about the identity plane's tenancy.
+
+**Still blocked:** OQ#7 (BYO-key custody — encryption posture, masked visibility,
+export/delete on departure, liability for keys spent through the plane) must be
+answered before the **non-client** tier onboards. Clients are unblocked today,
+since they use our keys under a paid relationship — the case the parent calls
+settled.
+
+### Unchanged
+
+H1, H3, H4, H5, H7 stand as written. D5, D6, D8, D10 stand. The acceptance
+criteria are unchanged except that "authenticates as the *person*" is now
+satisfied via didi.sh — and Onyx's `PT_OAUTH` (pass-through OAuth) means Onyx
+forwards the end user's identity upstream rather than a service account, so the
+plane resolves *that person's* workspace and keys without Onyx-specific work.
 
 ## Prior art — the Skills plane already works, crudely (2026-08-09)
 
@@ -189,9 +298,13 @@ Each phase ends in a gate: a thing observed, not a thing believed.
 
 ### Phase 0 — Kill the risky assumption first
 
-Before building anything real, prove H2. Stand up a **throwaway** MCP server in
-reach-edu's project that does exactly one thing: delegate OAuth to reach-edu's
-Twenty and expose a single `whoami` tool.
+⚠️ **Repointed 2026-08-20 by A1.** Stand up a **throwaway** MCP server that does
+exactly one thing: delegate OAuth to **didi.sh** and expose a single `whoami`
+tool — which `/api/me` already implements, so the stub wraps rather than writes
+it. This is now **the same experiment as the parent's spike #1**; run it once and
+both discharge. It is a *measurement, not a build*: the point is to learn what
+the clients accept before deciding whether didi.sh grows full `/authorize` + DCR
+endpoints or exchanges an existing `didi_session` for an MCP access token.
 
 Test across the full matrix (D6): Claude Desktop, ChatGPT Desktop, Claude mobile,
 ChatGPT mobile. Record which auth flows each accepts and whether **resources** and
@@ -261,12 +374,16 @@ addresses entirely — closing [[Normalize-Paths-Everywhere]].
 
 ## Open questions
 
-1. **Does Twenty work as an authorization server for a third party?** (H2, the
-   whole bet.) Its discovery documents advertise the endpoints; whether it will
-   issue tokens for a resource that isn't itself is unverified. Phase 0.
+1. ~~**Does Twenty work as an authorization server for a third party?**~~
+   **MOOT as of A1** — Twenty is no longer the authorization server. Replaced by:
+   *which OAuth surface must didi.sh grow* — full `/authorize` + token endpoint +
+   DCR, or a `didi_session` → MCP token exchange? Phase 0 answers it by
+   measurement.
 2. **Do resources and prompts surface in ChatGPT's UI, or only tools?** If only
    tools, Phase 1's value collapses on half the matrix and skills must be
-   re-shaped as tools. Shared with ai-labs OQ#1.
+   re-shaped as tools. Shared with ai-labs OQ#1. **Partially answered 2026-08-20
+   for a client this question did not anticipate: Onyx reads tools and resources,
+   NOT prompts** — hence A2.
 3. **Where does homebase's code live?** A new `core/homebase/` in this repo, or
    its own repo mounted as a submodule? Affects the deploy story per client.
 4. **How do skills get from `context-v/agent-skills/` into a running homebase** —
