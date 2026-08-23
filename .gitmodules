@@ -1,24 +1,40 @@
 [submodule "core/twenty-crm"]
 	path = core/twenty-crm
 	url = https://github.com/lossless-group/twenty-crm.git
+	branch = main
+	update = merge
 [submodule "core/papermark"]
 	path = core/papermark
 	url = https://github.com/lossless-group/papermark.git
+	branch = main
+	update = merge
 [submodule "core/plunk"]
 	path = core/plunk
 	url = https://github.com/useplunk/plunk
+	branch = next
+	update = merge
 [submodule "core/postiz-app"]
 	path = core/postiz-app
 	url = https://github.com/gitroomhq/postiz-app
+	branch = main
+	update = merge
 [submodule "core/karakeep"]
 	path = core/karakeep
 	url = https://github.com/karakeep-app/karakeep.git
+	branch = main
+	update = merge
 [submodule "hubs/lossless-at"]
 	path = hubs/lossless-at
 	url = https://github.com/lossless-group/lossless-at.git
+	branch = main
+	update = merge
 [submodule "core/plane"]
 	path = core/plane
 	url = https://github.com/makeplane/plane.git
+	branch = preview
+	update = merge
 [submodule "core/cal.diy"]
 	path = core/cal.diy
 	url = https://github.com/lossless-group/cal.diy.git
+	branch = main
+	update = merge
