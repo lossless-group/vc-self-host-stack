@@ -19,3 +19,6 @@
 [submodule "core/plane"]
 	path = core/plane
 	url = https://github.com/makeplane/plane.git
+[submodule "core/cal.diy"]
+	path = core/cal.diy
+	url = https://github.com/lossless-group/cal.diy.git

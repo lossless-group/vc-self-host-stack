@@ -24,8 +24,9 @@ Setup and management available on request from [The Lossless Group](https://loss
 | **[papermark](./core/papermark)** — only fully open-source VDR; unlimited rooms, page-by-page analytics, custom domains | DealRoom ($12k–$15k/yr), ShareVault ($1.5k–$5k+/deal) | $11k–$49k/yr |
 | **[plunk](./core/plunk)** — open-source email platform; transactional sends, marketing campaigns, and automation workflows in one, AWS SES backend, Docker-deployable, AGPL-3.0 | Mailchimp ($1.6k–$4.2k/yr), Kit/ConvertKit ($1.1k–$2.4k/yr), SendGrid/Resend (transactional) | $1k–$4k/yr |
 | **[postiz-app](./core/postiz-app)** — open-source social media scheduling; one composer → many channels (X, LinkedIn, Instagram, Facebook, TikTok, YouTube, Mastodon, Bluesky), AI copy/design, per-post analytics, team collaboration, unlimited users, AGPL-3.0 | Hootsuite ($1.2k–$3k/yr), Buffer ($2.4k/yr), Sprout Social ($199+/seat/mo) | $1.2k–$5k/yr |
-| **[karakeep](./core/karakeep)** — self-hostable bookmark-everything app (links, notes, images) with AI-based automatic tagging and full-text search; multi-user with an admin panel for account creation and role management, AGPL-3.0 | Raindrop.io Pro ($36/yr), Pocket/Instapaper Premium ($36–$60/yr) | $540–$900/yr (15 users) |
-| **[plane](./core/plane)** — Linear-shaped issue tracking; cycles, modules, intake, five layouts, and — decisively — the full REST API, webhooks and personal access tokens in the **free** community edition, plus an official MCP server, AGPL-3.0 | Linear Standard ($8/seat/mo) → Business ($14/seat/mo), Jira ($8–$16/seat/mo) | $1.4k–$2.5k/yr (15 users) |
+| **[karakeep](./core/karakeep)** — self-hostable bookmark-everything app (links, notes, images) with AI-based automatic tagging and full-text search; multi-user with an admin panel for account creation and role management, AGPL-3.0 | Raindrop.io Pro ($36/yr), Pocket/Instapaper Premium ($36–$60/yr) | **$540–$900/yr** — 15 × $36 = $540; × $60 = $900 (already annual, no × 12) |
+| **[plane](./core/plane)** — Linear-shaped issue tracking; cycles, modules, intake, five layouts, and — decisively — the full REST API, webhooks and personal access tokens in the **free** community edition, plus an official MCP server, AGPL-3.0 | Linear Standard ($8/seat/mo) → Business ($14/seat/mo), Jira ($8–$16/seat/mo) | **$1.4k–$2.5k/yr** — 15 × 12 × $8 = $1,440; × $14 = $2,520 |
+| **[cal.diy](./core/cal.diy)** — MIT community fork of Cal.com, kept open after the April 2026 closed-source split; unlimited per-audience booking links, a **destination calendar per event type**, hidden links, and an embeddable booker. Built from source — there is no published image ([why](./docs/caldiy/setup.md)) | Calendly Standard ($10/seat/mo) → Teams ($16/seat/mo) | **$1.8k–$2.9k/yr** — 15 × 12 × $10 = $1,800; × $16 = $2,880 |
 
 ## Live in production today (managed tier)
 
@@ -80,7 +81,9 @@ runbook so they only bite once — ever, for anyone.
 
 ## Coming next
 
-Cal.diy / Tymeslot (scheduling), Mattermost (team chat), Jitsi Meet (video), Metabase (BI), NocoDB (no-code DB), BookStack (knowledge base). Each will land as its own submodule under `core/` with the same deploy-wrapper discipline. See the [full catalogue](#the-stack) below.
+Mattermost (team chat), Jitsi Meet (video), Metabase (BI), NocoDB (no-code DB), BookStack (knowledge base). Each will land as its own submodule under `core/` with the same deploy-wrapper discipline. See the [full catalogue](#the-stack) below.
+
+Tymeslot stays on the watchlist rather than the roadmap: it was the hedge in case the Cal.com fork stalled, and cal.diy is demonstrably alive — 47.8k stars, last commit 2026-08-08, and now deployed here.
 
 ---
 

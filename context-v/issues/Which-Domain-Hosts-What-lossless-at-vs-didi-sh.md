@@ -67,6 +67,58 @@ the wiki cutovers just finished and no appetite to disturb working services.
 | 4 × `twenty-server-*.up.railway.app` | Twenty's `SERVER_URL` is also its **OAuth issuer** — it appears in the MCP connector's discovery documents, so changing it forces every connected Claude Desktop to re-authenticate |
 | `papermark-production-722f.up.railway.app` | Lower risk, but nobody passes links out of it the way they do from Outline |
 
+## Records of record — added 2026-08-22
+
+**Where DNS is actually served is not where the domain is registered.** This is
+the first thing to establish before touching any record, and it has already
+nearly cost an hour:
+
+| Domain | Registrar | Authoritative nameservers |
+|---|---|---|
+| `lossless.at` | iwantmyname (1API GmbH / nic.at) | `ns1.vercel-dns.com`, `ns2.vercel-dns.com` |
+
+Records added at the **registrar** for `lossless.at` land in a zone nobody
+queries. All changes go through Vercel — dashboard under the `colearn-labs`
+team, or:
+
+```bash
+vercel dns ls  lossless.at --scope colearn-labs
+vercel dns add lossless.at @ TXT "<value>" --scope colearn-labs
+```
+
+### Non-obvious records and what breaks without them
+
+The hazard with every row here is **deletion during a tidy-up**, not
+disclosure — none of these values are secret. They look like debris and are
+load-bearing.
+
+| Name | Type | Purpose | If removed |
+|---|---|---|---|
+| `@` | TXT | `google-site-verification=CV3Pi5…` — Search Console ownership proof for `mpstaton@gmail.com`, added 2026-08-22, rec `rec_d6ff0425902c7fcf329782cf` | Search Console un-verifies → the OAuth consent screen for `mps-caldiy-sync` fails its branding check → Google Calendar connections on Cal.diy break. Long fuse, no obvious cause. |
+| `_railway-verify.wiki.palmer-ai` | TXT | Railway custom-domain ownership proof | Railway may stop serving / re-issuing certs for that Outline host |
+| `_railway-verify.wiki.reach-edu` | TXT | same | same |
+| `_railway-verify.wiki.the-water-foundation` | TXT | same | same |
+| `wiki.<client>` | CNAME | → each Outline's Railway host | The wiki stops resolving. Outline generates absolute links at its configured URL, so shared links break for people outside the team. |
+| `*` and `@` | ALIAS | → Vercel | The portal goes down |
+| `@` | CAA | `pki.goog`, `sectigo.com`, `letsencrypt.org` | Certificate issuance fails for whichever CA gets dropped |
+
+### Why the Search Console record is load-bearing beyond SEO
+
+It is easy to read a `google-site-verification` TXT as "something to do with
+search rankings" and delete it on a domain that is `noindex` anyway — which
+`lossless.at` is, via `BaseLayout.astro`. It is not about indexing. Google's
+OAuth branding verification uses Search Console as its proof-of-ownership
+mechanism, so this record is a dependency of **calendar sync working**, on a
+domain we deliberately keep out of search results. Those two facts together are
+exactly why it would get deleted.
+
+### Registrar hygiene
+
+As of 2026-08-22 iwantmyname reports **no valid payment method — auto-renewal
+disabled** on `lossless.at`. The portal, both policy pages, and Google's proof
+of domain ownership all now depend on this domain. Expiry takes all of it at
+once.
+
 ## What forced the current split
 
 Not aesthetics — three real constraints:
