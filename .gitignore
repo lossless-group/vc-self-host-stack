@@ -53,3 +53,6 @@ hub/.astro/
 # Processed images awaiting/after CDN upload — the CDN is the source of truth
 # for served bytes; these are local working copies. See prep-images-for-embed.
 .image-staging/
+
+# SurrealDB CLI query history (written to the cwd by `surreal sql`)
+history.txt
