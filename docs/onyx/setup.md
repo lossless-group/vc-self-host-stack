@@ -265,6 +265,20 @@ is what makes that migration cheap.
 - **Delta 6 — untested surfaces.** Connector ingest, S3 upload round-trip (the
   bucket is `urlStyle: virtual-host`, which boto3 can be fussy about), and the
   code-interpreter service (not deployed) are NOT yet exercised.
+- **Delta 7 — 2026-10-06 shrink (palmer-ai), and two traps it sprang.**
+  Heap `-Xms1g -Xmx1g` on onyx-opensearch; onyx-background start command
+  rewrites supervisord.conf to drop `discord_bot`, `slack_bot`,
+  `celery_worker_scheduled_tasks` (none configured). Background 3.0 → 2.2 GB.
+  Revert = start command `/app/scripts/supervisord_entrypoint.sh` + bump
+  `CONFIG_EPOCH`.
+  **Trap A:** onyx-opensearch was deployed via `railway up` from
+  `docs/onyx/railway/opensearch/`, but its service *source* is still the stock
+  `opensearchproject/opensearch` image. ANY variable change rebuilds from the
+  stock image → `OpenSearch cannot run as root` crash loop. After changing a
+  var, re-run `railway up` from the wrapper dir (or repoint the source).
+  **Trap B:** Railway strips backslashes from start commands. A `python -c`
+  regex that passed a local bash test crashed in prod. Write start commands
+  with zero backslashes, and test with `shlex.split`, not `eval`.
 
 ## Related
 
