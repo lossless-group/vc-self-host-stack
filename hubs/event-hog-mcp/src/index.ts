@@ -28,7 +28,15 @@ export interface Env {
 
 export interface Person {
   name: string;
+  /** Primary address: what commits are authored as. */
   email: string;
+  /** Every other address that is this person (work, personal, aliases). */
+  emails?: string[];
+}
+
+/** All of a person's addresses, primary first, lowercased and de-duplicated. */
+export function identities(p: Person): string[] {
+  return [...new Set([p.email, ...(p.emails ?? [])].filter(Boolean).map((e) => e.trim().toLowerCase()))];
 }
 
 const DIR = "/repo";
@@ -441,7 +449,9 @@ const HANDLERS: Record<string, Handler> = {
   ...CRM_HANDLERS,
   ...LOCATION_HANDLERS,
   async whoami(_args, env, person) {
-    return `You are ${person.name} <${person.email}>. Current event: ${env.DEFAULT_EVENT}.`;
+    const [primary, ...others] = identities(person);
+    const also = others.length ? ` Also known as: ${others.join(", ")}.` : "";
+    return `You are ${person.name} <${primary}> (commits are authored as this address).${also} Current event: ${env.DEFAULT_EVENT}.`;
   },
 
   async list_events(_args, env) {
@@ -511,6 +521,9 @@ const HANDLERS: Record<string, Handler> = {
 
   async log_contact(args, env, person) {
     if (!args?.name || !args?.notes) throw new Error("A contact needs at least a name and notes.");
+    const email = String(args.email ?? "").trim().toLowerCase();
+    const teammate = email ? Object.values(people(env)).find((p) => identities(p).includes(email)) : undefined;
+    if (teammate) throw new Error(`${email} is ${teammate.name}, a teammate on this workspace, not a contact. Use add_note for team notes.`);
     const event = ev(args, env);
     const nameSlug = slug(args.name);
     if (!nameSlug) throw new Error("That name has no letters or digits to file it under.");
