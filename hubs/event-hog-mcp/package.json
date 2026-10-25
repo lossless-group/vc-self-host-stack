@@ -1,0 +1,19 @@
+{
+  "name": "event-hog-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Remote MCP server over Cloudflare Artifacts: a shared, git-backed event workspace a team can prep and log contacts into from Claude Desktop and mobile.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "isomorphic-git": "1.44.4"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "wrangler": "4.152.0"
+  }
+}

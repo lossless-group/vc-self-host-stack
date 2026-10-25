@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "event-hog",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "artifacts": [{ "binding": "ARTIFACTS", "namespace": "event-hog" }],
+  // agnostic-crm: our structured model of people, orgs, events, touchpoints.
+  "d1_databases": [
+    {
+      "binding": "CRM",
+      "database_name": "agnostic-crm",
+      "database_id": "acd49d55-854d-4891-920f-0730d98096f9",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    // Which event repo tools use when the caller doesn't name one.
+    "DEFAULT_EVENT": "2026-10-7x24-exchange-fall",
+    "NAMESPACE": "event-hog",
+    "EVENT_TIMEZONE": "America/Chicago"
+  }
+  // Secrets (wrangler secret put):
+  //   PEOPLE      JSON map of connector key -> { "name": "...", "email": "..." }
+  //   ACCOUNT_ID  only used to build a remote URL if info() doesn't return one
+}
