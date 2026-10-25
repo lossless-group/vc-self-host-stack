@@ -32,11 +32,18 @@ export interface Person {
   email: string;
   /** Every other address that is this person (work, personal, aliases). */
   emails?: string[];
+  /** The address their CRM (HubSpot) knows them by: owners and "created by" match on it. */
+  crm_email?: string;
+}
+
+/** The address to use anywhere a CRM attributes work to this person. */
+export function crmEmail(p: Person): string {
+  return (p.crm_email ?? p.email).trim().toLowerCase();
 }
 
 /** All of a person's addresses, primary first, lowercased and de-duplicated. */
 export function identities(p: Person): string[] {
-  return [...new Set([p.email, ...(p.emails ?? [])].filter(Boolean).map((e) => e.trim().toLowerCase()))];
+  return [...new Set([p.email, ...(p.emails ?? []), p.crm_email ?? ""].filter(Boolean).map((e) => e.trim().toLowerCase()))];
 }
 
 const DIR = "/repo";
@@ -53,7 +60,7 @@ How to use it:
 - recent_activity shows what teammates logged and when.
 - Locations are human-defined and nested (define_location); a person or org can have many (link_location), and who_is_in finds everyone inside a place, nested places included.
 - query_crm answers structured questions (who at an org have we met, which orgs relate to which, open follow-ups) from the agnostic-crm database, which log_contact keeps in step with the files.
-- CRM: contacts start as hubspot_status pending. If the user has a HubSpot connector, crm_queue lists what's pending. Propose the HubSpot records, create them only after the user approves, then call mark_crm_synced with the HubSpot ID. Never mark something synced that wasn't created.`;
+- CRM: contacts start as hubspot_status pending. If the user has a HubSpot connector, crm_queue lists what's pending. Each pending contact shows who logged it and their HubSpot email: make that HubSpot user the contact owner (find them with search_owners by that email). Propose the HubSpot records, create them only after the user approves, then call mark_crm_synced with the HubSpot ID. Never mark something synced that wasn't created.`;
 
 // ---------------------------------------------------------------- entry point
 
@@ -451,7 +458,7 @@ const HANDLERS: Record<string, Handler> = {
   async whoami(_args, env, person) {
     const [primary, ...others] = identities(person);
     const also = others.length ? ` Also known as: ${others.join(", ")}.` : "";
-    return `You are ${person.name} <${primary}> (commits are authored as this address).${also} Current event: ${env.DEFAULT_EVENT}.`;
+    return `You are ${person.name} <${primary}> (commits are authored as this address).${also} HubSpot knows you as ${crmEmail(person)}. Current event: ${env.DEFAULT_EVENT}.`;
   },
 
   async list_events(_args, env) {
@@ -558,6 +565,7 @@ const HANDLERS: Record<string, Handler> = {
         Object.assign(front, {
           event,
           first_logged_by: person.name,
+          first_logged_by_email: crmEmail(person),
           first_logged_at: t.iso,
           hubspot_status: "pending",
           hubspot_id: "",
@@ -604,7 +612,8 @@ const HANDLERS: Record<string, Handler> = {
       const { front } = parseFront((await read(ws, f)) ?? "");
       if ((front.hubspot_status || "pending") !== "pending") continue;
       const fields = CONTACT_FIELDS.filter((k) => front[k]).map((k) => `${k}: ${front[k]}`).join(" · ");
-      rows.push(`- ${f} — ${fields} · first logged by ${front.first_logged_by || "?"}`);
+      const by = front.first_logged_by_email ? `${front.first_logged_by} <${front.first_logged_by_email}>` : front.first_logged_by || "?";
+      rows.push(`- ${f} — ${fields} · first logged by ${by} (HubSpot owner: the HubSpot user with that email)`);
     }
     return rows.length ? `${rows.length} contact(s) pending for HubSpot:\n${rows.join("\n")}` : "Nothing pending for HubSpot.";
   },
@@ -659,6 +668,6 @@ const PROMPTS = [
   {
     name: "crm-sync",
     description: "Move pending event contacts into HubSpot, with review.",
-    text: "Run crm_queue in event-hog. For each pending contact, check HubSpot for an existing contact (by email, then name and company). Show me one table of what you'd create or update in HubSpot. After I approve, create them, then call mark_crm_synced for each with the HubSpot ID.",
+    text: "Run crm_queue in event-hog. For each pending contact, check HubSpot for an existing contact (by email, then name and company). Set each contact's owner to the HubSpot user whose email is shown as who logged it (use search_owners). Show me one table of what you'd create or update in HubSpot, including the owner. After I approve, create them, then call mark_crm_synced for each with the HubSpot ID.",
   },
 ];

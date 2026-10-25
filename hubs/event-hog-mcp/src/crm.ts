@@ -7,6 +7,7 @@
 
 import type { Env, Handler, Person } from "./index";
 import { ensureLocation, linkLocationStmt } from "./locations";
+import { crmEmail } from "./index";
 
 const uuid = () => crypto.randomUUID();
 const nowIso = () => new Date().toISOString();
@@ -148,12 +149,13 @@ export async function recordContact(
   const interactionId = uuid();
   stmts.push(
     env.CRM.prepare(
-      "INSERT INTO interactions (id, event_instance_id, occurred_at, logged_by, where_met, notes, follow_up, follow_up_owner, artifact_path, artifact_commit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO interactions (id, event_instance_id, occurred_at, logged_by, logged_by_email, where_met, notes, follow_up, follow_up_owner, artifact_path, artifact_commit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     ).bind(
       interactionId,
       instanceId,
       at,
       person.name,
+      crmEmail(person),
       args.where_met ?? null,
       args.notes ?? null,
       args.follow_up ?? null,
@@ -214,7 +216,7 @@ export async function recordCrmLink(
 
 // ---------------------------------------------------------------- tools
 
-const SCHEMA_NOTE = `Tables: persons(id, name, headline, linkedin_url, first_seen_at, last_seen_at, first_touched_by, last_touched_by); person_identifiers(person_id, kind email|phone|linkedin, value); organizations(id, slug, complete_name, conventional_name, aliases JSON, domains JSON); affiliations(person_id, org_id, kind = title, relevance 0-5, ended_at); org_relations(child_org_id, parent_org_id, rel child_of|peer, kind e.g. partners_with|customer_of|funder_of, description); event_series(id, slug, name, organizer_org_id -> organizations, cadence, website); event_instances(id, series_id, slug = event-hog repo name, name, starts_on, ends_on, venue, city); interactions(id, event_instance_id, occurred_at, logged_by, where_met, notes, follow_up, follow_up_owner, follow_up_done_at, artifact_path); interaction_participants(interaction_id, person_id, role); observations(subject_type person|organization, subject_id, predicate, object, source, observed_at, observed_by, event_instance_id): the provenance log, and where event participation lives (predicates speaker_at, sponsor_of, exhibitor_at, attended, met_at, target, has_priority, has_title, affiliated_with); tags(subject_type, subject_id, tag); crm_links(entity_type, entity_id, system hubspot, external_id, url, synced_at); locations(id, slug, name, kind, aliases JSON); location_edges(parent_id, child_id, mode include|exclude): a graph, use who_is_in for nested lookups; location_links(location_id, subject_type, subject_id, role based_in|office|hq|works_from|covers|venue|from, ended_at).`;
+const SCHEMA_NOTE = `Tables: persons(id, name, headline, linkedin_url, first_seen_at, last_seen_at, first_touched_by, last_touched_by); person_identifiers(person_id, kind email|phone|linkedin, value); organizations(id, slug, complete_name, conventional_name, aliases JSON, domains JSON); affiliations(person_id, org_id, kind = title, relevance 0-5, ended_at); org_relations(child_org_id, parent_org_id, rel child_of|peer, kind e.g. partners_with|customer_of|funder_of, description); event_series(id, slug, name, organizer_org_id -> organizations, cadence, website); event_instances(id, series_id, slug = event-hog repo name, name, starts_on, ends_on, venue, city); interactions(id, event_instance_id, occurred_at, logged_by, logged_by_email = their HubSpot address, where_met, notes, follow_up, follow_up_owner, follow_up_done_at, artifact_path); interaction_participants(interaction_id, person_id, role); observations(subject_type person|organization, subject_id, predicate, object, source, observed_at, observed_by, event_instance_id): the provenance log, and where event participation lives (predicates speaker_at, sponsor_of, exhibitor_at, attended, met_at, target, has_priority, has_title, affiliated_with); tags(subject_type, subject_id, tag); crm_links(entity_type, entity_id, system hubspot, external_id, url, synced_at); locations(id, slug, name, kind, aliases JSON); location_edges(parent_id, child_id, mode include|exclude): a graph, use who_is_in for nested lookups; location_links(location_id, subject_type, subject_id, role based_in|office|hq|works_from|covers|venue|from, ended_at).`;
 
 export const CRM_TOOLS = [
   {
