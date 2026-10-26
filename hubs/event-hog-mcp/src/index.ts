@@ -60,7 +60,8 @@ How to use it:
 - recent_activity shows what teammates logged and when.
 - Locations are human-defined and nested (define_location); a person or org can have many (link_location), and who_is_in finds everyone inside a place, nested places included.
 - query_crm answers structured questions (who at an org have we met, which orgs relate to which, open follow-ups) from the agnostic-crm database, which log_contact keeps in step with the files.
-- CRM: contacts start as hubspot_status pending. If the user has a HubSpot connector, crm_queue lists what's pending. Each pending contact shows who logged it and their HubSpot email: make that HubSpot user the contact owner (find them with search_owners by that email). Propose the HubSpot records, create them only after the user approves, then call mark_crm_synced with the HubSpot ID. Never mark something synced that wasn't created.`;
+- CRM: contacts start as hubspot_status pending. If the user has a HubSpot connector, crm_queue lists what's pending. Each pending contact shows who logged it and their HubSpot email: make that HubSpot user the contact owner (find them with search_owners by that email). Propose the HubSpot records, create them only after the user approves, then call mark_crm_synced with the HubSpot ID. Never mark something synced that wasn't created.
+- If the HubSpot connection isn't working (no HubSpot connector, sign-in fails, or HubSpot calls error), don't keep retrying and don't stop logging. log_contact is the raw record: it saves every contact to the shared files and the agnostic-crm database whether or not HubSpot works. At each stopping point (end of a conversation, a break, end of the day) run export_hubspot_csv: it writes everyone still pending into a HubSpot-ready import file, committed under exports/, for a bulk import later. Tell the user that's what happened.`;
 
 // ---------------------------------------------------------------- entry point
 
@@ -266,6 +267,11 @@ function clean(path: string): string {
   return p;
 }
 
+function csvCell(v: unknown): string {
+  const s = v == null ? "" : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
 function slug(s: string): string {
   return String(s ?? "")
     .normalize("NFKD")
@@ -422,6 +428,18 @@ const BASE_TOOLS = [
       type: "object",
       properties: { path: { type: "string" }, text: { type: "string" }, ...eventArg },
       required: ["path", "text"],
+    },
+  },
+  {
+    name: "export_hubspot_csv",
+    description:
+      "Write every contact still pending for HubSpot into a CSV with HubSpot's import column names (Contact owner is the logger's HubSpot email), commit it under exports/, and return it. Use at stopping points when the HubSpot connection isn't working, so the team can bulk-import later. Contacts stay pending until mark_crm_synced.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        include_synced: { type: "boolean", description: "Include contacts already in HubSpot (default false)" },
+        ...eventArg,
+      },
     },
   },
   {
@@ -605,6 +623,55 @@ const HANDLERS: Record<string, Handler> = {
     });
   },
 
+  async export_hubspot_csv(args, env, person) {
+    const event = ev(args, env);
+    let rows = 0;
+    let preview = "";
+    return write(env, event, person, "export: HubSpot import CSV", async (ws) => {
+      const cols = [
+        "Email",
+        "First Name",
+        "Last Name",
+        "Company Name",
+        "Job Title",
+        "Phone Number",
+        "LinkedIn URL",
+        "Contact owner",
+        "Event",
+        "Priority",
+        "Event-hog file",
+      ];
+      const lines = [cols.map(csvCell).join(",")];
+      for (const f of (await walk(ws, "contacts")).filter((x) => x.endsWith(".md"))) {
+        const { front } = parseFront((await read(ws, f)) ?? "");
+        if (!args?.include_synced && (front.hubspot_status || "pending") !== "pending") continue;
+        // HubSpot imports want first and last name apart. Split on the first
+        // space so particles stay with the surname ("Pablo" / "De Luynes");
+        // single names go in First Name. Check odd names before importing.
+        const name = String(front.name ?? "").trim();
+        const cut = name.indexOf(" ");
+        const first = cut > 0 ? name.slice(0, cut) : name;
+        const last = cut > 0 ? name.slice(cut + 1) : "";
+        lines.push(
+          [front.email, first, last, front.company, front.title, front.phone, front.linkedin, front.first_logged_by_email, front.event, front.priority, f]
+            .map(csvCell)
+            .join(","),
+        );
+        rows++;
+      }
+      if (!rows) throw new Error("Nothing pending for HubSpot, so there's nothing to export.");
+      const t = now(env);
+      const path = `exports/hubspot-contacts_${t.date}_${t.iso.slice(11, 16).replace(":", "")}.csv`;
+      const csv = lines.join("\n") + "\n";
+      preview = lines.slice(0, 6).join("\n");
+      await ws.fs.promises.writeFile(`${DIR}/${path}`, csv);
+      return {
+        paths: [path],
+        summary: `Wrote ${rows} contact(s) to ${path} for a HubSpot import (Contacts object; map "Contact owner" by email, and leave Event, Priority and Event-hog file unmapped or as custom properties). They stay pending until imported and marked synced.\n\n${preview}${rows > 5 ? "\n…" : ""}`,
+      };
+    });
+  },
+
   async crm_queue(args, env) {
     const ws = await open(env, ev(args, env), "read");
     const rows: string[] = [];
@@ -668,6 +735,6 @@ const PROMPTS = [
   {
     name: "crm-sync",
     description: "Move pending event contacts into HubSpot, with review.",
-    text: "Run crm_queue in event-hog. For each pending contact, check HubSpot for an existing contact (by email, then name and company). Set each contact's owner to the HubSpot user whose email is shown as who logged it (use search_owners). Show me one table of what you'd create or update in HubSpot, including the owner. After I approve, create them, then call mark_crm_synced for each with the HubSpot ID.",
+    text: "Run crm_queue in event-hog. For each pending contact, check HubSpot for an existing contact (by email, then name and company). Set each contact's owner to the HubSpot user whose email is shown as who logged it (use search_owners). Show me one table of what you'd create or update in HubSpot, including the owner. After I approve, create them, then call mark_crm_synced for each with the HubSpot ID. If HubSpot isn't connected or its calls fail, run export_hubspot_csv instead and tell me where the file is.",
   },
 ];
