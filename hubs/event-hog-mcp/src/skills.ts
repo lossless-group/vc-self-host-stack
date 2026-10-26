@@ -1,9 +1,14 @@
 // The skills plane: shared agent-skills and per-person/per-org configuration,
-// served from an Artifacts repo in the hubspot-brain namespace, so a skill
-// edited in git reaches every client on its next call. Plus the first skill's
-// write path: save_speaker_profile.
+// served from Artifacts repos, so a skill edited in git reaches every client on
+// its next call. Plus the first skill's write path: save_speaker_profile.
+//
+// Skills come from two places, in order:
+//   1. event-hog-kit (event-hog namespace), skills/<name>/: event-hog's own,
+//      CRM-agnostic package. Its copy wins when a name exists in both.
+//   2. the deployment's CRM brain (hubspot-brain/agent-skills): CRM-specific.
+// Per-person config lives in the kit (config/skills.json).
 
-import type { Env, Handler, Person, Workspace } from "./index";
+import type { Env, Handler, Person, Space, Workspace } from "./index";
 import { DIR, open, read, walk, write, parseFront, slug, now, crmEmail } from "./index";
 import { ensureInstance, ensureOrg, findOrg, findPerson } from "./crm";
 
@@ -24,10 +29,17 @@ async function loadConfig(ws: Workspace): Promise<any> {
   }
 }
 
-async function skillNames(ws: Workspace): Promise<{ name: string; description: string }[]> {
+type Source = { space: Space; repo: string; prefix: string; label: string };
+const sources = (env: Env): Source[] => [
+  { space: "event", repo: env.KIT_REPO, prefix: "skills/", label: env.KIT_REPO },
+  { space: "brain", repo: env.SKILLS_REPO, prefix: "", label: `${env.BRAIN_NAMESPACE}/${env.SKILLS_REPO}` },
+];
+const openKit = (env: Env, scope: "read" | "write") => open(env, env.KIT_REPO, scope, "event");
+
+async function skillNames(ws: Workspace, prefix = ""): Promise<{ name: string; description: string }[]> {
   const out: { name: string; description: string }[] = [];
-  for (const f of await walk(ws)) {
-    const m = f.match(/^([^/]+)\/SKILL\.md$/);
+  for (const f of await walk(ws, prefix.replace(/\/$/, ""))) {
+    const m = f.slice(prefix.length).match(/^([^/]+)\/SKILL\.md$/);
     if (!m) continue;
     const { front } = parseFront((await read(ws, f)) ?? "");
     out.push({ name: front.name || m[1], description: front.description || "" });
@@ -120,28 +132,36 @@ export const SKILL_TOOLS = [
 
 export const SKILL_HANDLERS: Record<string, Handler> = {
   async list_skills(_args, env) {
-    const ws = await open(env, env.SKILLS_REPO, "read", "brain");
-    const skills = await skillNames(ws);
-    if (!skills.length) return "No skills published yet.";
-    return skills.map((s) => `- ${s.name}: ${s.description.split(". ")[0].slice(0, 220)}`).join("\n");
+    const seen = new Set<string>();
+    const lines: string[] = [];
+    for (const src of sources(env)) {
+      const ws = await open(env, src.repo, "read", src.space);
+      for (const s of await skillNames(ws, src.prefix)) {
+        if (seen.has(s.name)) continue;
+        seen.add(s.name);
+        lines.push(`- ${s.name} (${src.label}): ${s.description.split(". ")[0].slice(0, 220)}`);
+      }
+    }
+    return lines.length ? lines.join("\n") : "No skills published yet.";
   },
 
   async get_skill(args, env) {
     const name = slug(String(args.name ?? ""));
-    const ws = await open(env, env.SKILLS_REPO, "read", "brain");
     const file = args.file ? String(args.file).replace(/^\/+/, "") : "SKILL.md";
     if (file.split("/").some((p) => p === ".." || p === ".git")) throw new Error("Invalid file path.");
-    const text = await read(ws, `${name}/${file}`);
-    if (text === null) {
-      const names = (await skillNames(ws)).map((s) => s.name).join(", ");
-      throw new Error(`No ${file} for skill "${args.name}". Available skills: ${names || "none"}.`);
+    const names: string[] = [];
+    for (const src of sources(env)) {
+      const ws = await open(env, src.repo, "read", src.space);
+      const text = await read(ws, `${src.prefix}${name}/${file}`);
+      if (text !== null) return text;
+      names.push(...(await skillNames(ws, src.prefix)).map((s) => s.name));
     }
-    return text;
+    throw new Error(`No ${file} for skill "${args.name}". Available skills: ${[...new Set(names)].join(", ") || "none"}.`);
   },
 
   async get_config(args, env, person) {
     const skill = String(args.skill ?? "");
-    const ws = await open(env, env.SKILLS_REPO, "read", "brain");
+    const ws = await openKit(env, "read");
     const c = await loadConfig(ws);
     const org = c.org[skill] ?? {};
     const mine = c.people[crmEmail(person)]?.[skill] ?? {};
@@ -158,7 +178,7 @@ export const SKILL_HANDLERS: Record<string, Handler> = {
     const skill = String(args.skill || "augment-speakers-panelists");
     return write(
       env,
-      env.SKILLS_REPO,
+      env.KIT_REPO,
       person,
       `config: ${person.name}'s research tools for ${skill}`,
       async (ws) => {
@@ -170,7 +190,7 @@ export const SKILL_HANDLERS: Record<string, Handler> = {
         return { paths: [CONFIG_PATH], summary: `Saved ${person.name}'s research tools for ${skill}: ${tools.map((t: any) => t.name).join(", ")}.` };
       },
       undefined,
-      "brain",
+      "event",
     );
   },
 

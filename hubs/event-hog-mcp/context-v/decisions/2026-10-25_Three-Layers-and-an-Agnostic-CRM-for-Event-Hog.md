@@ -4,7 +4,7 @@ title: "Decision: Three Layers, and an Agnostic CRM Model, for Event Hog"
 lede: "Event work lives in three places at once: a git repo the team writes to together, a database shaped the way we think about customers, and HubSpot as one place that data gets pushed. Our model, not HubSpot's, decides what a contact is."
 publish: false
 date_created: 2026-10-25
-date_modified: 2026-10-25
+date_modified: 2026-10-26
 date_authored_initial_draft: 2026-10-25
 date_authored_current_draft: 2026-10-25
 date_authored_final_draft:
@@ -103,6 +103,17 @@ client's homebase is planned as a Railway service inside that client's
 Railway project. Edviro's runs as Cloudflare Workers in Edviro's own
 Cloudflare account. event-hog is its first piece; the HubSpot wrapper and the
 skills plane join it there.
+
+**6. event-hog is a product, with its own kit.** *(Added 2026-10-26.)*
+event-hog is meant to be an MCP server plus a package others can adopt and
+iterate on, not an Edviro-specific build. Its CRM-agnostic skills, the event
+workspace template, and per-deployment skill settings live in an Artifacts
+repo of their own, `event-hog/event-hog-kit` (`skills/`, `templates/event/`,
+`config/skills.json`), next to the event repos. CRM-specific skills stay with
+the client's CRM deployment (`hubspot-brain/agent-skills` for Edviro). The
+server reads skills from the kit first, then the brain; the kit's copy wins
+when a name exists in both. Skill text still originates in the public
+`lossless-agent-skills` repo on GitHub.
 
 ## Why
 

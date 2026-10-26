@@ -24,7 +24,9 @@
     "NAMESPACE": "event-hog",
     "EVENT_TIMEZONE": "America/Chicago",
     "BRAIN_NAMESPACE": "hubspot-brain",
-    "SKILLS_REPO": "agent-skills"
+    "SKILLS_REPO": "agent-skills",
+    // event-hog's own package: CRM-agnostic skills, the event template, skill config.
+    "KIT_REPO": "event-hog-kit"
   }
   // Secrets (wrangler secret put):
   //   PEOPLE      JSON map of connector key -> { "name": "...", "email": "..." }

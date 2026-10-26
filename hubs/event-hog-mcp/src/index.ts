@@ -22,6 +22,7 @@ export interface Env {
   BRAIN: any;
   BRAIN_NAMESPACE: string;
   SKILLS_REPO: string;
+  KIT_REPO: string;
   CRM: any;
   PEOPLE: string;
   ACCOUNT_ID?: string;
@@ -493,7 +494,8 @@ const HANDLERS: Record<string, Handler> = {
 
   async list_events(_args, env) {
     const page = await env.ARTIFACTS.list({ limit: 100 });
-    const names = (page?.repos ?? []).map((r: any) => r.name);
+    // The kit lives in the same namespace but isn't an event.
+    const names = (page?.repos ?? []).map((r: any) => r.name).filter((n: string) => n !== env.KIT_REPO);
     return names.length ? names.map((n: string) => `- ${n}${n === env.DEFAULT_EVENT ? " (current)" : ""}`).join("\n") : "No events yet.";
   },
 
