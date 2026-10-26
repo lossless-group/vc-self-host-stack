@@ -16,6 +16,7 @@ import { MemoryFS } from "./memory-fs";
 import { CRM_TOOLS, CRM_HANDLERS, recordContact, recordCrmLink } from "./crm";
 import { LOCATION_TOOLS, LOCATION_HANDLERS } from "./locations";
 import { SKILL_TOOLS, SKILL_HANDLERS, SKILL_PROMPTS } from "./skills";
+import { STARTER_TOOLS, STARTER_HANDLERS, STARTER_PROMPTS } from "./starters";
 
 export interface Env {
   ARTIFACTS: any;
@@ -59,6 +60,7 @@ const INSTRUCTIONS = `event-hog is a shared workspace for a team working an even
 
 How to use it:
 - Skills: list_skills shows the team's playbooks; get_skill loads one before doing that kind of work (e.g. augment-speakers-panelists when someone shares a speaker card or asks who a speaker is). get_config returns this person's and the organization's settings for a skill, such as which research tools to use.
+- Starters: whenever someone logs a contact, adds a note, or saves a speaker profile, load parallel-content-generation-starters (once per conversation) and follow it. Answer the person first; starters come after, short, and never block logging. Flash cards for acronyms, vocabulary, concepts and market standards go in the shared deck with save_flash_cards; flash_cards reads it.
 - Start with event_brief to see the event, the team, the prep docs, and what's been logged.
 - Before logging a contact, search for them: log_contact appends to an existing contact (matched by email, then name) instead of making a duplicate, but a quick search shows what teammates already know.
 - log_contact takes whatever the person gives you: a typed note, a badge or business-card photo you've read, or a voice memo transcript. Never invent fields. Leave unknown ones out.
@@ -476,7 +478,7 @@ const BASE_TOOLS = [
   },
 ];
 
-const TOOLS = [...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS, ...SKILL_TOOLS];
+const TOOLS = [...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS, ...SKILL_TOOLS, ...STARTER_TOOLS];
 
 export type Handler = (args: any, env: Env, person: Person) => Promise<string>;
 
@@ -486,6 +488,7 @@ const HANDLERS: Record<string, Handler> = {
   ...CRM_HANDLERS,
   ...LOCATION_HANDLERS,
   ...SKILL_HANDLERS,
+  ...STARTER_HANDLERS,
   async whoami(_args, env, person) {
     const [primary, ...others] = identities(person);
     const also = others.length ? ` Also known as: ${others.join(", ")}.` : "";
@@ -753,4 +756,4 @@ const BASE_PROMPTS = [
   },
 ];
 
-const PROMPTS = [...BASE_PROMPTS, ...SKILL_PROMPTS];
+const PROMPTS = [...BASE_PROMPTS, ...SKILL_PROMPTS, ...STARTER_PROMPTS];
