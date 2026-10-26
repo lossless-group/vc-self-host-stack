@@ -4,7 +4,11 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-10-25",
   "compatibility_flags": ["nodejs_compat"],
-  "artifacts": [{ "binding": "ARTIFACTS", "namespace": "event-hog" }],
+  "artifacts": [
+    { "binding": "ARTIFACTS", "namespace": "event-hog" },
+    // Shared skills and configuration, served to every client of this server.
+    { "binding": "BRAIN", "namespace": "hubspot-brain" }
+  ],
   // agnostic-crm: our structured model of people, orgs, events, touchpoints.
   "d1_databases": [
     {
@@ -18,7 +22,9 @@
     // Which event repo tools use when the caller doesn't name one.
     "DEFAULT_EVENT": "2026-10-7x24-exchange-fall",
     "NAMESPACE": "event-hog",
-    "EVENT_TIMEZONE": "America/Chicago"
+    "EVENT_TIMEZONE": "America/Chicago",
+    "BRAIN_NAMESPACE": "hubspot-brain",
+    "SKILLS_REPO": "agent-skills"
   }
   // Secrets (wrangler secret put):
   //   PEOPLE      JSON map of connector key -> { "name": "...", "email": "..." }

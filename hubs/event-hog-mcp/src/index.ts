@@ -15,9 +15,13 @@ import http from "isomorphic-git/http/web";
 import { MemoryFS } from "./memory-fs";
 import { CRM_TOOLS, CRM_HANDLERS, recordContact, recordCrmLink } from "./crm";
 import { LOCATION_TOOLS, LOCATION_HANDLERS } from "./locations";
+import { SKILL_TOOLS, SKILL_HANDLERS, SKILL_PROMPTS } from "./skills";
 
 export interface Env {
   ARTIFACTS: any;
+  BRAIN: any;
+  BRAIN_NAMESPACE: string;
+  SKILLS_REPO: string;
   CRM: any;
   PEOPLE: string;
   ACCOUNT_ID?: string;
@@ -46,13 +50,14 @@ export function identities(p: Person): string[] {
   return [...new Set([p.email, ...(p.emails ?? []), p.crm_email ?? ""].filter(Boolean).map((e) => e.trim().toLowerCase()))];
 }
 
-const DIR = "/repo";
+export const DIR = "/repo";
 const SERVER = { name: "event-hog", version: "0.1.0" };
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
 const INSTRUCTIONS = `event-hog is a shared workspace for a team working an event together: prep before, contacts and notes during, follow-ups after. Every write is a git commit attributed to the person using this connector.
 
 How to use it:
+- Skills: list_skills shows the team's playbooks; get_skill loads one before doing that kind of work (e.g. augment-speakers-panelists when someone shares a speaker card or asks who a speaker is). get_config returns this person's and the organization's settings for a skill, such as which research tools to use.
 - Start with event_brief to see the event, the team, the prep docs, and what's been logged.
 - Before logging a contact, search for them: log_contact appends to an existing contact (matched by email, then name) instead of making a duplicate, but a quick search shows what teammates already know.
 - log_contact takes whatever the person gives you: a typed note, a badge or business-card photo you've read, or a voice memo transcript. Never invent fields. Leave unknown ones out.
@@ -167,18 +172,23 @@ async function handle(msg: any, env: Env, person: Person): Promise<any | null> {
 
 // ---------------------------------------------------------------- git workspace
 
-interface Workspace {
+export interface Workspace {
   fs: MemoryFS;
   remote: string;
   onAuth: () => { username: string; password: string };
 }
 
-async function open(env: Env, event: string, scope: "read" | "write"): Promise<Workspace> {
-  const repo = await env.ARTIFACTS.get(event);
+// "event" repos live in the event-hog namespace (one per event instance);
+// "brain" repos in hubspot-brain (shared skills and configuration).
+export type Space = "event" | "brain";
+
+export async function open(env: Env, event: string, scope: "read" | "write", space: Space = "event"): Promise<Workspace> {
+  const ns = space === "brain" ? env.BRAIN_NAMESPACE : env.NAMESPACE;
+  const repo = await (space === "brain" ? env.BRAIN : env.ARTIFACTS).get(event);
   try {
     const info = await repo.info();
     const remote: string =
-      info?.remote ?? `https://${env.ACCOUNT_ID}.artifacts.cloudflare.net/git/${env.NAMESPACE}/${event}.git`;
+      info?.remote ?? `https://${env.ACCOUNT_ID}.artifacts.cloudflare.net/git/${ns}/${event}.git`;
     const token = await repo.createToken(scope, 600);
     const secret = String(token.plaintext).split("?expires=")[0];
     const onAuth = () => ({ username: "x", password: secret });
@@ -190,7 +200,7 @@ async function open(env: Env, event: string, scope: "read" | "write"): Promise<W
   }
 }
 
-async function read(ws: Workspace, path: string): Promise<string | null> {
+export async function read(ws: Workspace, path: string): Promise<string | null> {
   try {
     return (await ws.fs.promises.readFile(`${DIR}/${clean(path)}`, "utf8")) as string;
   } catch {
@@ -198,7 +208,7 @@ async function read(ws: Workspace, path: string): Promise<string | null> {
   }
 }
 
-async function walk(ws: Workspace, dir = ""): Promise<string[]> {
+export async function walk(ws: Workspace, dir = ""): Promise<string[]> {
   const base = dir ? `${DIR}/${dir}` : DIR;
   let names: string[];
   try {
@@ -220,7 +230,7 @@ async function walk(ws: Workspace, dir = ""): Promise<string[]> {
 // Clone, apply `change`, commit as `person`, push. Retries from a fresh clone when
 // a teammate's push lands first. `change` writes files and returns the paths it
 // touched plus a summary for the caller.
-async function write(
+export async function write(
   env: Env,
   event: string,
   person: Person,
@@ -229,10 +239,11 @@ async function write(
   // Runs only after the push lands, so git stays the record; a failure here is
   // reported, not retried, and never undoes the commit.
   after?: (oid: string) => Promise<string>,
+  space: Space = "event",
 ): Promise<string> {
   let lastError: unknown;
   for (let attempt = 0; attempt < 5; attempt++) {
-    const ws = await open(env, event, "write");
+    const ws = await open(env, event, "write", space);
     const { paths, summary } = await change(ws);
     for (const filepath of paths) await git.add({ fs: ws.fs, dir: DIR, filepath });
     const oid = await git.commit({
@@ -267,12 +278,12 @@ function clean(path: string): string {
   return p;
 }
 
-function csvCell(v: unknown): string {
+export function csvCell(v: unknown): string {
   const s = v == null ? "" : String(v);
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-function slug(s: string): string {
+export function slug(s: string): string {
   return String(s ?? "")
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")
@@ -282,7 +293,7 @@ function slug(s: string): string {
     .slice(0, 60);
 }
 
-function now(env: Env): { stamp: string; date: string; iso: string; zone: string } {
+export function now(env: Env): { stamp: string; date: string; iso: string; zone: string } {
   const d = new Date();
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
@@ -302,9 +313,9 @@ function now(env: Env): { stamp: string; date: string; iso: string; zone: string
   return { date, stamp: `${date} ${parts.hour}:${parts.minute} ${parts.timeZoneName}`, iso: d.toISOString(), zone: parts.timeZoneName };
 }
 
-type Front = Record<string, string>;
+export type Front = Record<string, string>;
 
-function parseFront(text: string): { front: Front; order: string[]; body: string } {
+export function parseFront(text: string): { front: Front; order: string[]; body: string } {
   const m = text.match(/^---\n([\s\S]*?)\n---\n?/);
   if (!m) return { front: {}, order: [], body: text };
   const front: Front = {};
@@ -324,7 +335,7 @@ function parseFront(text: string): { front: Front; order: string[]; body: string
   return { front, order, body: text.slice(m[0].length) };
 }
 
-function renderFront(front: Front, order: string[]): string {
+export function renderFront(front: Front, order: string[]): string {
   const keys = [...order, ...Object.keys(front).filter((k) => !order.includes(k))];
   const lines = keys.map((k) => `${k}: ${front[k] ? JSON.stringify(front[k]) : ""}`);
   return `---\n${lines.join("\n")}\n---\n`;
@@ -464,7 +475,7 @@ const BASE_TOOLS = [
   },
 ];
 
-const TOOLS = [...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS];
+const TOOLS = [...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS, ...SKILL_TOOLS];
 
 export type Handler = (args: any, env: Env, person: Person) => Promise<string>;
 
@@ -473,6 +484,7 @@ const ev = (args: any, env: Env) => (args?.event ? String(args.event) : env.DEFA
 const HANDLERS: Record<string, Handler> = {
   ...CRM_HANDLERS,
   ...LOCATION_HANDLERS,
+  ...SKILL_HANDLERS,
   async whoami(_args, env, person) {
     const [primary, ...others] = identities(person);
     const also = others.length ? ` Also known as: ${others.join(", ")}.` : "";
@@ -721,7 +733,7 @@ async function findContact(ws: Workspace, args: any, nameSlug: string, fileName:
 
 // ---------------------------------------------------------------- prompts
 
-const PROMPTS = [
+const BASE_PROMPTS = [
   {
     name: "log-from-badge",
     description: "Log a contact from a badge or business-card photo.",
@@ -738,3 +750,5 @@ const PROMPTS = [
     text: "Run crm_queue in event-hog. For each pending contact, check HubSpot for an existing contact (by email, then name and company). Set each contact's owner to the HubSpot user whose email is shown as who logged it (use search_owners). Show me one table of what you'd create or update in HubSpot, including the owner. After I approve, create them, then call mark_crm_synced for each with the HubSpot ID. If HubSpot isn't connected or its calls fail, run export_hubspot_csv instead and tell me where the file is.",
   },
 ];
+
+const PROMPTS = [...BASE_PROMPTS, ...SKILL_PROMPTS];

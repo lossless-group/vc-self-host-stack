@@ -28,7 +28,7 @@ const normLinkedin = (v: string) => v.trim().toLowerCase().replace(/^https?:\/\/
 
 // The instance an event-hog repo is the workspace for. Normally seeded with its
 // series and organizer; created bare if a repo is used before that.
-async function ensureInstance(env: Env, eventSlug: string): Promise<string> {
+export async function ensureInstance(env: Env, eventSlug: string): Promise<string> {
   await env.CRM.prepare(
     "INSERT OR IGNORE INTO event_instances (id, slug, name, artifacts_repo, source, first_seen_at) VALUES (?, ?, ?, ?, 'event-hog', ?)",
   )
@@ -53,7 +53,7 @@ export async function findOrg(env: Env, name: string): Promise<string | null> {
   return (row?.id as string) ?? null;
 }
 
-async function ensureOrg(env: Env, name: string, source: string): Promise<string> {
+export async function ensureOrg(env: Env, name: string, source: string): Promise<string> {
   const found = await findOrg(env, name);
   if (found) return found;
   const s = slug(name);
@@ -68,7 +68,7 @@ async function ensureOrg(env: Env, name: string, source: string): Promise<string
 
 // Same identity rules as the contact files: email, then LinkedIn, then
 // name + organization. A name alone never merges two people.
-async function findPerson(env: Env, args: any, orgId: string | null): Promise<string | null> {
+export async function findPerson(env: Env, args: any, orgId: string | null): Promise<string | null> {
   const ids: [string, string][] = [];
   if (args.email) ids.push(["email", normEmail(args.email)]);
   if (args.linkedin) ids.push(["linkedin", normLinkedin(args.linkedin)]);
