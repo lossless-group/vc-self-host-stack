@@ -287,7 +287,11 @@ const pages = {
       if (error instanceof AuthorizationError && error.redirectTo) return Response.redirect(error.redirectTo, 302);
       if (error instanceof AuthorizationError) return problem(env, error.description ?? "This sign-in link expired or was already used.");
       if (error instanceof CimdFetchError) return problem(env, "This app couldn't be verified.");
-      throw error;
+      // Anything else is ours or HubSpot's, not the user's: log it, and say
+      // what broke (never tokens; error messages here don't carry them).
+      console.error("sign-in failed", url.pathname, error);
+      const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      return problem(env, `Something broke on our side at ${url.pathname} (${message}). Send this message to whoever set up the connector.`, 500);
     }
   },
 };
