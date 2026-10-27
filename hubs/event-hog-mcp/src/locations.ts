@@ -65,7 +65,7 @@ async function isAncestor(env: Env, maybeAncestor: string, node: string): Promis
   return Boolean(row);
 }
 
-async function addEdge(env: Env, parent: string, child: string, mode: "include" | "exclude", person: Person) {
+export async function addEdge(env: Env, parent: string, child: string, mode: "include" | "exclude", person: Person) {
   if (parent === child) throw new Error("A location can't contain itself.");
   if (await isAncestor(env, child, parent)) throw new Error("That would make a loop: the child already contains the parent.");
   await env.CRM.prepare(
