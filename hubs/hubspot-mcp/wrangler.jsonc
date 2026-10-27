@@ -1,0 +1,29 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // One environment per client: each is its own Worker, in that client's
+  // Cloudflare account, holding that client's HubSpot MCP auth app.
+  // Deploy with: npx wrangler deploy --env <client>
+  "name": "hubspot-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "env": {
+    "edviro": {
+      "name": "hubspot-mcp-edviro",
+      // Grants, tokens, and registered clients. HubSpot tokens are stored only
+      // inside each grant's encrypted props.
+      "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "4e7f4fd9cd9840ff9c6bba003c099cf5" }],
+      "vars": {
+        "PUBLIC_URL": "https://hubspot-mcp-edviro.tanujsiripurapu.workers.dev",
+        "LABEL": "Edviro",
+        // The HubSpot MCP auth app's client ID (not a secret). Its redirect
+        // URLs must include PUBLIC_URL + /callback.
+        "HUBSPOT_CLIENT_ID": "fdc439c7-b0be-438e-b90f-c3e42d31635b",
+        // Edviro's portal only: a sign-in to any other HubSpot is refused.
+        "ALLOWED_HUB_IDS": "246641970"
+      }
+      // Secrets (wrangler secret put --env edviro): HUBSPOT_CLIENT_SECRET, CONSENT_SECRET
+    }
+  }
+}
