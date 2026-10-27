@@ -27,6 +27,7 @@
 
 import type { Env, Front, Handler, Person, Workspace } from "./index";
 import { DIR, open, read, walk, write, parseFront, renderFront, slug, now, people } from "./index";
+import { pendingIn } from "./brand";
 
 const ROOT = "slides";
 const MAX_BYTES = 4_000_000;
@@ -59,13 +60,14 @@ export async function serveMedia(env: Env, key: string): Promise<Response> {
   if (!/^[a-z0-9][a-z0-9/_.-]{0,300}$/i.test(key) || key.includes("..")) return new Response("Not found", { status: 404 });
   const obj = await env.MEDIA.get(key);
   if (!obj) return new Response("Not found", { status: 404 });
-  return new Response(obj.body, {
-    headers: {
-      "content-type": obj.httpMetadata?.contentType ?? "image/jpeg",
-      "cache-control": "public, max-age=31536000, immutable",
-      etag: obj.httpEtag,
-    },
-  });
+  const type = obj.httpMetadata?.contentType ?? "image/jpeg";
+  const headers: Record<string, string> = { "content-type": type, "cache-control": "public, max-age=31536000, immutable", etag: obj.httpEtag };
+  // Recreated slides are agent-written HTML: no scripts, no forms, own origin sandboxed.
+  if (type.startsWith("text/html")) {
+    headers["content-security-policy"] =
+      "sandbox; default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src https: data:";
+  }
+  return new Response(obj.body, { headers });
 }
 
 const mediaKey = (url: string) => url.split("/media/")[1] ?? "";
@@ -434,7 +436,15 @@ export const SLIDE_HANDLERS: Record<string, Handler> = {
         await ws.fs.promises.writeFile(`${DIR}/${index}`, `${head}- **${nn}** · ${title || type} · ${String(args.core_message).trim()} ([image](${front.image_url}), [notes](${nn}.md))\n`);
         paths.push(index);
       }
-      return { paths, summary: `${first ? "Notes written" : "Another take added"} for ${md}.` };
+      const folder = md.slice(0, md.lastIndexOf("/"));
+      const left = await pendingIn(ws, folder); // this slide is already written as noted
+      const next =
+        left > 0
+          ? ` ${left} more in this session still need notes.`
+          : first
+            ? "\n\nThat's every slide in this session written up. Ask the person, in one line, whether any are important enough to recreate in the company brand (recreate-slides-in-brand): suggest the 2–3 strongest and why."
+            : "";
+      return { paths, summary: `${first ? "Notes written" : "Another take added"} for ${md}.${next}` };
     });
   },
 };

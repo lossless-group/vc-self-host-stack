@@ -18,6 +18,7 @@ import { LOCATION_TOOLS, LOCATION_HANDLERS } from "./locations";
 import { SKILL_TOOLS, SKILL_HANDLERS, SKILL_PROMPTS } from "./skills";
 import { STARTER_TOOLS, STARTER_HANDLERS, STARTER_PROMPTS, STARTER_NUDGES } from "./starters";
 import { SLIDE_TOOLS, SLIDE_HANDLERS, SLIDE_PROMPTS, handleCapture, serveMedia } from "./slides";
+import { BRAND_TOOLS, BRAND_HANDLERS, BRAND_PROMPTS } from "./brand";
 
 export interface Env {
   ARTIFACTS: any;
@@ -67,6 +68,7 @@ How to use it:
 - Skills: list_skills shows the team's playbooks; get_skill loads one before doing that kind of work (e.g. augment-speakers-panelists when someone shares a speaker card or asks who a speaker is). get_config returns this person's and the organization's settings for a skill, such as which research tools to use.
 - Starters: whenever someone logs a contact, adds a note, or saves a speaker profile, load parallel-content-generation-starters (once per conversation) and follow it. Answer the person first; starters come after, short, and never block logging. Flash cards for acronyms, vocabulary, concepts and market standards go in the shared deck with save_flash_cards; flash_cards reads it. Post drafts (tweets, threads, LinkedIn, blog) go in drafts/ with save_draft and add_to_draft, in the company voice for official pieces and the person's own voice for theirs (get_config). Nothing is ever posted from here.
 - Slides: images attached in chat can be read but not saved by any tool. To save slide photos, give the person their slide_capture_link (a camera page that shrinks and saves photos under their name). Then list slides needing notes, look at each with view_slide, and write them up with save_slide_notes (load the capture-slides skill first).
+- Brand: get_design_system returns the organization's DESIGN.md; if there is none, extract_brand reads the company site and maintain-design-system says how to draft one. When a batch of slides is written up, ask whether any are worth recreating in the brand (recreate-slides-in-brand); every recreation credits its source on the slide.
 - Start with event_brief to see the event, the team, the prep docs, and what's been logged.
 - Before logging a contact, search for them: log_contact appends to an existing contact (matched by email, then name) instead of making a duplicate, but a quick search shows what teammates already know.
 - log_contact takes whatever the person gives you: a typed note, a badge or business-card photo you've read, or a voice memo transcript. Never invent fields. Leave unknown ones out.
@@ -489,7 +491,7 @@ const BASE_TOOLS = [
   },
 ];
 
-const TOOLS = [...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS, ...SKILL_TOOLS, ...STARTER_TOOLS, ...SLIDE_TOOLS];
+const TOOLS = [...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS, ...SKILL_TOOLS, ...STARTER_TOOLS, ...SLIDE_TOOLS, ...BRAND_TOOLS];
 
 // Most tools answer in text; a few (view_slide) return MCP content blocks, e.g. an image.
 export type Handler = (args: any, env: Env, person: Person) => Promise<string | { content: any[] }>;
@@ -502,6 +504,7 @@ const HANDLERS: Record<string, Handler> = {
   ...SKILL_HANDLERS,
   ...STARTER_HANDLERS,
   ...SLIDE_HANDLERS,
+  ...BRAND_HANDLERS,
   async whoami(_args, env, person) {
     const [primary, ...others] = identities(person);
     const also = others.length ? ` Also known as: ${others.join(", ")}.` : "";
@@ -769,4 +772,4 @@ const BASE_PROMPTS = [
   },
 ];
 
-const PROMPTS = [...BASE_PROMPTS, ...SKILL_PROMPTS, ...STARTER_PROMPTS, ...SLIDE_PROMPTS];
+const PROMPTS = [...BASE_PROMPTS, ...SKILL_PROMPTS, ...STARTER_PROMPTS, ...SLIDE_PROMPTS, ...BRAND_PROMPTS];
