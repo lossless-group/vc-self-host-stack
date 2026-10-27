@@ -6,7 +6,7 @@
   "name": "hubspot-mcp",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-25",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "workers_dev": true,
   "env": {
     "edviro": {

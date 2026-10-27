@@ -304,6 +304,9 @@ function build(env: Env): OAuthProvider<Env> {
     authorizeEndpoint: "/authorize",
     tokenEndpoint: "/token",
     clientRegistrationEndpoint: "/register",
+    // Claude's default: it identifies itself by a metadata document Anthropic
+    // hosts (CIMD) instead of registering. DCR stays on for Codex and others.
+    clientIdMetadataDocumentEnabled: true,
     resourceMetadata: {
       resource: `${env.PUBLIC_URL}/mcp`,
       authorization_servers: [env.PUBLIC_URL],

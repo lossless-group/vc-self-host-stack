@@ -23,7 +23,7 @@ HubSpot with the app's secret and passes MCP traffic through.
 
 | Client | How |
 |---|---|
-| Claude (desktop, web, mobile) | Settings → Connectors → Add custom connector → URL `<PUBLIC_URL>/mcp`. Leave Advanced settings empty. |
+| Claude (desktop, web, mobile) | Settings → Connectors → Add custom connector → URL `<PUBLIC_URL>/mcp`. Keep the defaults (Sign in now; Claude's published identity). Leave Advanced settings empty. |
 | Codex | `codex mcp add hubspot --url <PUBLIC_URL>/mcp`, then `codex mcp login hubspot` |
 | Anything else | Streamable HTTP at `<PUBLIC_URL>/mcp`; OAuth is discovered from the 401 |
 
