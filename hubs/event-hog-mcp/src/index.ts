@@ -72,6 +72,7 @@ How to use it:
 - Start with event_brief to see the event, the team, the prep docs, and what's been logged.
 - Before logging a contact, search for them: log_contact appends to an existing contact (matched by email, then name) instead of making a duplicate, but a quick search shows what teammates already know.
 - log_contact takes whatever the person gives you: a typed note, a badge or business-card photo you've read, or a voice memo transcript. Never invent fields. Leave unknown ones out.
+- Contacts__Met.csv at the workspace root lists everyone the team met, regenerated on every log_contact; contacts_csv rebuilds and returns it. Attendee lists in prep/ are reference, not contacts: never log someone as a contact from an attendee list alone.
 - add_note is for anything that isn't one person: a session takeaway, a theme from the floor, an idea.
 - recent_activity shows what teammates logged and when.
 - Locations are human-defined and nested (define_location); a person or org can have many (link_location), and who_is_in finds everyone inside a place, nested places included.
@@ -359,6 +360,60 @@ export function renderFront(front: Front, order: string[]): string {
 
 const CONTACT_FIELDS = ["name", "company", "title", "email", "phone", "linkedin", "priority"] as const;
 
+// Contacts__Met.csv: everyone the team met and logged at this event, one row
+// each, regenerated from contacts/*.md on every log_contact and
+// mark_crm_synced. The .md files are the record; the CSV is a view of them
+// for spreadsheets and imports, so hand edits to it are overwritten.
+// (Attendee lists are reference material and live in prep/, not here.)
+export const CONTACTS_CSV = "Contacts__Met.csv";
+const CONTACTS_COLUMNS = [
+  "Name", "Company", "Title", "Email", "Phone", "LinkedIn", "Priority",
+  "First Logged By", "First Logged By Email", "First Logged At", "Touchpoints", "Last Touchpoint",
+  "Latest Follow-Up", "HubSpot Status", "HubSpot ID", "File",
+];
+
+// E.164 when a number is unambiguous (US/Canada 10 digits, or already
+// international); otherwise left as written rather than guessed. A field with
+// several numbers ("… (mobile); … x12 (office)") gets each one normalized in
+// place, labels and extensions kept.
+function e164One(s: string): string {
+  const digits = s.replace(/\D/g, "");
+  if (s.trim().startsWith("+") && digits.length >= 8 && digits.length <= 15) return `+${digits}`;
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return s;
+}
+function e164(raw: string): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  const parts = s.match(/\+?\(?\d[\d\s().-]{6,}\d/g) ?? [];
+  if (parts.length <= 1 && !/x\s*\d|ext/i.test(s) && !/[a-z]{3,}/i.test(s)) return e164One(s);
+  return s.replace(/\+?\(?\d[\d\s().-]{6,}\d/g, (m) => e164One(m));
+}
+
+async function refreshContactsCsv(ws: Workspace): Promise<{ path: string; rows: number; csv: string }> {
+  const lines = [CONTACTS_COLUMNS.join(",")];
+  const files = (await walk(ws, "contacts")).filter((f) => f.endsWith(".md")).sort();
+  for (const f of files) {
+    const text = (await read(ws, f)) ?? "";
+    const { front, body } = parseFront(text);
+    const touches = [...body.matchAll(/^### (.+?) · (.+)$/gm)];
+    const followUps = [...body.matchAll(/^- \*\*Follow-up:\*\* (.+)$/gm)];
+    const last = touches.at(-1);
+    lines.push(
+      [
+        front.name, front.company, front.title, front.email, e164(front.phone), front.linkedin, front.priority,
+        front.first_logged_by, front.first_logged_by_email, front.first_logged_at,
+        touches.length, last ? `${last[1]} (${last[2]})` : "", followUps.at(-1)?.[1] ?? "",
+        front.hubspot_status || "pending", front.hubspot_id, f,
+      ].map(csvCell).join(","),
+    );
+  }
+  const csv = lines.join("\n") + "\n";
+  await ws.fs.promises.writeFile(`${DIR}/${CONTACTS_CSV}`, csv);
+  return { path: CONTACTS_CSV, rows: files.length, csv };
+}
+
 // ---------------------------------------------------------------- tools
 
 const eventArg = {
@@ -456,6 +511,11 @@ const BASE_TOOLS = [
       properties: { path: { type: "string" }, text: { type: "string" }, ...eventArg },
       required: ["path", "text"],
     },
+  },
+  {
+    name: "contacts_csv",
+    description: `Rebuild and return ${CONTACTS_CSV}: everyone the team met and logged at this event, one row each (name, company, title, email, phone in E.164, LinkedIn, priority, who logged them and when, touchpoints, latest follow-up, HubSpot status). It also updates itself on every log_contact. For spreadsheets and imports; not an attendee list.`,
+    inputSchema: { type: "object", properties: { ...eventArg } },
   },
   {
     name: "export_hubspot_csv",
@@ -626,8 +686,9 @@ const HANDLERS: Record<string, Handler> = {
         text = `${renderFront(front, Object.keys(front))}\n${heading}\n\n## Touchpoints\n\n${touch}`;
       }
       await ws.fs.promises.writeFile(`${DIR}/${path}`, text);
+      await refreshContactsCsv(ws);
       return {
-        paths: [path],
+        paths: [path, CONTACTS_CSV],
         summary: `${created ? "New contact" : "Added a touchpoint to existing contact"}: ${path}${created ? "" : " (found by email or name; nothing was overwritten)"}. HubSpot status: pending.`,
       };
     }, (oid) => recordContact(env, person, event, args, path, oid));
@@ -718,6 +779,15 @@ const HANDLERS: Record<string, Handler> = {
     return rows.length ? `${rows.length} contact(s) pending for HubSpot:\n${rows.join("\n")}` : "Nothing pending for HubSpot.";
   },
 
+  async contacts_csv(args, env, person) {
+    let out = { path: CONTACTS_CSV, rows: 0, csv: "" };
+    const saved = await write(env, ev(args, env), person, `contacts: rebuild ${CONTACTS_CSV}`, async (ws) => {
+      out = await refreshContactsCsv(ws);
+      return { paths: [CONTACTS_CSV], summary: `${CONTACTS_CSV}: ${out.rows} contact(s).` };
+    });
+    return `${saved}\n\n${out.csv}`;
+  },
+
   async mark_crm_synced(args, env, person) {
     const path = clean(args.path);
     if (!path.startsWith("contacts/")) throw new Error("mark_crm_synced only applies to files under contacts/.");
@@ -730,7 +800,8 @@ const HANDLERS: Record<string, Handler> = {
       if (args.hubspot_url) parsed.front.hubspot_url = String(args.hubspot_url);
       parsed.front.hubspot_synced_by = person.name;
       await ws.fs.promises.writeFile(`${DIR}/${path}`, renderFront(parsed.front, parsed.order) + parsed.body);
-      return { paths: [path], summary: `${path} marked as in HubSpot (${args.hubspot_id}).` };
+      await refreshContactsCsv(ws);
+      return { paths: [path, CONTACTS_CSV], summary: `${path} marked as in HubSpot (${args.hubspot_id}).` };
     }, () => recordCrmLink(env, person, path, String(args.hubspot_id), args.hubspot_url ? String(args.hubspot_url) : null));
   },
 };
