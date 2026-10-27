@@ -9,6 +9,9 @@
     // Shared skills and configuration, served to every client of this server.
     { "binding": "BRAIN", "namespace": "hubspot-brain" }
   ],
+  // event-hog-media: slide photos and other images, served at /media/<key>.
+  // Repos keep the text (notes with the image's URL), not the image bytes.
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "event-hog-media" }],
   // agnostic-crm: our structured model of people, orgs, events, touchpoints.
   "d1_databases": [
     {
@@ -26,7 +29,8 @@
     "BRAIN_NAMESPACE": "hubspot-brain",
     "SKILLS_REPO": "agent-skills",
     // event-hog's own package: CRM-agnostic skills, the event template, skill config.
-    "KIT_REPO": "event-hog-kit"
+    "KIT_REPO": "event-hog-kit",
+    "PUBLIC_URL": "https://event-hog.tanujsiripurapu.workers.dev"
   }
   // Secrets (wrangler secret put):
   //   PEOPLE      JSON map of connector key -> { "name": "...", "email": "..." }

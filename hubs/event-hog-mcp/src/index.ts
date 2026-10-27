@@ -17,6 +17,7 @@ import { CRM_TOOLS, CRM_HANDLERS, recordContact, recordCrmLink } from "./crm";
 import { LOCATION_TOOLS, LOCATION_HANDLERS } from "./locations";
 import { SKILL_TOOLS, SKILL_HANDLERS, SKILL_PROMPTS } from "./skills";
 import { STARTER_TOOLS, STARTER_HANDLERS, STARTER_PROMPTS, STARTER_NUDGES } from "./starters";
+import { SLIDE_TOOLS, SLIDE_HANDLERS, SLIDE_PROMPTS, handleCapture, serveMedia } from "./slides";
 
 export interface Env {
   ARTIFACTS: any;
@@ -30,6 +31,10 @@ export interface Env {
   DEFAULT_EVENT: string;
   NAMESPACE: string;
   EVENT_TIMEZONE: string;
+  /** Image host: slide photos and other media, served at /media/<key>. */
+  MEDIA: any;
+  /** Public base URL, for links the server hands out (capture pages, media). */
+  PUBLIC_URL?: string;
 }
 
 export interface Person {
@@ -61,6 +66,7 @@ const INSTRUCTIONS = `event-hog is a shared workspace for a team working an even
 How to use it:
 - Skills: list_skills shows the team's playbooks; get_skill loads one before doing that kind of work (e.g. augment-speakers-panelists when someone shares a speaker card or asks who a speaker is). get_config returns this person's and the organization's settings for a skill, such as which research tools to use.
 - Starters: whenever someone logs a contact, adds a note, or saves a speaker profile, load parallel-content-generation-starters (once per conversation) and follow it. Answer the person first; starters come after, short, and never block logging. Flash cards for acronyms, vocabulary, concepts and market standards go in the shared deck with save_flash_cards; flash_cards reads it. Post drafts (tweets, threads, LinkedIn, blog) go in drafts/ with save_draft and add_to_draft, in the company voice for official pieces and the person's own voice for theirs (get_config). Nothing is ever posted from here.
+- Slides: images attached in chat can be read but not saved by any tool. To save slide photos, give the person their slide_capture_link (a camera page that shrinks and saves photos under their name). Then list slides needing notes, look at each with view_slide, and write them up with save_slide_notes (load the capture-slides skill first).
 - Start with event_brief to see the event, the team, the prep docs, and what's been logged.
 - Before logging a contact, search for them: log_contact appends to an existing contact (matched by email, then name) instead of making a duplicate, but a quick search shows what teammates already know.
 - log_contact takes whatever the person gives you: a typed note, a badge or business-card photo you've read, or a voice memo transcript. Never invent fields. Leave unknown ones out.
@@ -76,6 +82,9 @@ How to use it:
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/media/") && request.method === "GET") return serveMedia(env, url.pathname.slice(7));
+    const capture = url.pathname.match(/^\/capture\/([a-f0-9]{32})\/?$/);
+    if (capture) return handleCapture(request, env, capture[1]);
     const match = url.pathname.match(/^\/mcp\/([A-Za-z0-9_-]{16,})\/?$/);
 
     if (url.pathname === "/" && request.method === "GET") {
@@ -112,7 +121,7 @@ function rpcResponse(payload: unknown): Response {
   return new Response(JSON.stringify(payload), { headers: { "content-type": "application/json" } });
 }
 
-function people(env: Env): Record<string, Person> {
+export function people(env: Env): Record<string, Person> {
   try {
     return JSON.parse(env.PEOPLE || "{}");
   } catch {
@@ -147,9 +156,10 @@ async function handle(msg: any, env: Env, person: Person): Promise<any | null> {
         const tool = HANDLERS[params?.name];
         if (!tool) return fail(-32602, `Unknown tool: ${params?.name}`);
         try {
-          const text = await tool(params?.arguments ?? {}, env, person);
+          const out = await tool(params?.arguments ?? {}, env, person);
+          if (typeof out !== "string") return reply(out);
           const nudge = STARTER_NUDGES[params?.name];
-          return reply({ content: [{ type: "text", text: nudge ? `${text}\n\n${nudge}` : text }] });
+          return reply({ content: [{ type: "text", text: nudge ? `${out}\n\n${nudge}` : out }] });
         } catch (err: any) {
           return reply({ content: [{ type: "text", text: `Error: ${err?.message ?? String(err)}` }], isError: true });
         }
@@ -479,9 +489,10 @@ const BASE_TOOLS = [
   },
 ];
 
-const TOOLS = [...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS, ...SKILL_TOOLS, ...STARTER_TOOLS];
+const TOOLS = [...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS, ...SKILL_TOOLS, ...STARTER_TOOLS, ...SLIDE_TOOLS];
 
-export type Handler = (args: any, env: Env, person: Person) => Promise<string>;
+// Most tools answer in text; a few (view_slide) return MCP content blocks, e.g. an image.
+export type Handler = (args: any, env: Env, person: Person) => Promise<string | { content: any[] }>;
 
 const ev = (args: any, env: Env) => (args?.event ? String(args.event) : env.DEFAULT_EVENT);
 
@@ -490,6 +501,7 @@ const HANDLERS: Record<string, Handler> = {
   ...LOCATION_HANDLERS,
   ...SKILL_HANDLERS,
   ...STARTER_HANDLERS,
+  ...SLIDE_HANDLERS,
   async whoami(_args, env, person) {
     const [primary, ...others] = identities(person);
     const also = others.length ? ` Also known as: ${others.join(", ")}.` : "";
@@ -757,4 +769,4 @@ const BASE_PROMPTS = [
   },
 ];
 
-const PROMPTS = [...BASE_PROMPTS, ...SKILL_PROMPTS, ...STARTER_PROMPTS];
+const PROMPTS = [...BASE_PROMPTS, ...SKILL_PROMPTS, ...STARTER_PROMPTS, ...SLIDE_PROMPTS];
