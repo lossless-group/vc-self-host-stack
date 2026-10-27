@@ -70,6 +70,41 @@ export async function serveMedia(env: Env, key: string): Promise<Response> {
 
 const mediaKey = (url: string) => url.split("/media/")[1] ?? "";
 
+// Field notes: what the people in the room heard or thought while the slide
+// was up, kept exactly as typed and credited line by line. Never rewritten.
+const FIELD = "## Field notes";
+const fieldLine = (stamp: string, name: string, note: string, via = "") =>
+  `- ${stamp} · ${name}${via ? ` (${via})` : ""}: ${note.trim().replace(/\s*\n\s*/g, " / ")}`;
+
+function fieldNotes(body: string): string[] {
+  const i = body.indexOf(`\n${FIELD}\n`);
+  if (i < 0) return [];
+  const rest = body.slice(i + FIELD.length + 2);
+  const end = rest.search(/\n## /);
+  return (end < 0 ? rest : rest.slice(0, end)).split("\n").filter((l) => l.startsWith("- "));
+}
+
+// Put lines under Field notes: in the existing section, else right after Content, else at the end.
+function withFieldNotes(body: string, lines: string[]): string {
+  if (!lines.length) return body;
+  const i = body.indexOf(`\n${FIELD}\n`);
+  if (i >= 0) {
+    const start = i + FIELD.length + 2;
+    const rest = body.slice(start);
+    const end = rest.search(/\n## /);
+    const at = end < 0 ? body.length : start + end;
+    return `${body.slice(0, at).replace(/\s*$/, "\n")}${lines.join("\n")}\n${body.slice(at)}`;
+  }
+  const block = `${FIELD}\n\n${lines.join("\n")}\n`;
+  const c = body.indexOf("\n## Content");
+  const next = c < 0 ? -1 : body.slice(c + 1).search(/\n## /);
+  if (c >= 0 && next >= 0) {
+    const at = c + 1 + next + 1;
+    return `${body.slice(0, at)}${block}\n${body.slice(at)}`;
+  }
+  return `${body.replace(/\s*$/, "\n\n")}${block}`;
+}
+
 function toBase64(bytes: Uint8Array): string {
   let s = "";
   for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -94,6 +129,7 @@ export async function handleCapture(request: Request, env: Env, token: string): 
   const event = String(form.get("event") || env.DEFAULT_EVENT);
   const session = String(form.get("session") || "").trim();
   const speaker = String(form.get("speaker") || "").trim();
+  const note = String(form.get("note") || "").trim();
   const files = form.getAll("slide").filter((f): f is File => typeof f === "object" && f !== null && "arrayBuffer" in f);
   if (!files.length) return Response.json({ ok: false, error: "No photos received." }, { status: 400 });
   const meta = JSON.parse(String(form.get("meta") || "[]")) as { px?: string; detail?: string; original_bytes?: number }[];
@@ -116,21 +152,22 @@ export async function handleCapture(request: Request, env: Env, token: string): 
         const base = `${folder}/${nn}`;
         const m = meta[i] ?? {};
         const front: Front = {
-          image_url: imageUrl,
-          status: "needs-notes",
-          session,
+          title: "",
+          core_message: "",
+          slide_type: "",
           speaker,
+          session,
           captured_by: who.person.name,
           captured_at: t.iso,
+          status: "needs-notes",
+          image_url: imageUrl,
           image_px: m.px ?? "",
           image_kb: String(Math.round(bytes.length / 1024)),
           detail: m.detail ?? "",
           original_kb: m.original_bytes ? String(Math.round(m.original_bytes / 1024)) : "",
-          slide_type: "",
-          core_message: "",
           transcription_fidelity: "",
         };
-        await ws.fs.promises.writeFile(`${DIR}/${base}.md`, `${renderFront(front, Object.keys(front))}\n# Slide ${nn}${session ? ` · ${session}` : ""}\n\n![Slide ${nn}](${imageUrl})\n\n_Captured by ${who.person.name}, ${t.stamp}. Notes pending: ask Claude to "write up my slides"._\n`);
+        await ws.fs.promises.writeFile(`${DIR}/${base}.md`, `${renderFront(front, Object.keys(front))}\n# Slide ${nn}${session ? ` · ${session}` : ""}\n\n![Slide ${nn}](${imageUrl})\n\n${note ? `${FIELD}\n\n${fieldLine(t.stamp, who.person.name, note)}\n\n` : ""}_Captured by ${who.person.name}, ${t.stamp}. Notes pending: ask Claude to "write up my slides"._\n`);
         paths.push(`${base}.md`);
         saved.push(`${base}.md`);
       }
@@ -160,6 +197,7 @@ label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}input[type
 <h1>Capture slides</h1><p>${esc(name)} · ${esc(event)}. Photos are shrunk on this phone to the smallest size that stays readable, then saved to the team workspace under your name.</p>
 <label for="session">Session or panel</label><input id="session" type="text" value="${esc(session)}" placeholder="e.g. Converting a 1990 data center to 20MW of AI" autocomplete="off">
 <label for="speaker">Speaker (optional)</label><input id="speaker" type="text" placeholder="e.g. Ari Chernikoff" autocomplete="off">
+<label for="note">Your note (optional): what was said while it was up</label><textarea id="note" rows="2" placeholder="e.g. said 20MW is phase 2, not today" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg);font:16px system-ui"></textarea>
 <div class="chk"><input id="dense" type="checkbox"><label for="dense" style="margin:0;color:var(--fg)">Dense slide: keep more detail</label></div>
 <div class="row"><label class="btn" for="cam">Take photo</label><label class="btn alt" for="lib">Choose photos</label></div>
 <input id="cam" type="file" accept="image/*" capture="environment"><input id="lib" type="file" accept="image/*" multiple>
@@ -178,12 +216,12 @@ const long=Math.min(TIERS[t],Math.max(bmp.width,bmp.height));const s=long/Math.m
 const cv=new OffscreenCanvas(w,h);const cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,w,h);cx.drawImage(bmp,0,0,w,h);
 const blob=await cv.convertToBlob({type:'image/jpeg',quality:t>=2?.85:.82});return{blob,px:w+'x'+h,detail:['low','normal','high','dense'][t],original_bytes:file.size}}
 async function send(files){if(!files.length)return;const log=document.getElementById('log');const fd=new FormData();const meta=[];const rows=[];
-fd.append('event',EVENT);fd.append('session',document.getElementById('session').value);fd.append('speaker',document.getElementById('speaker').value);
+fd.append('event',EVENT);fd.append('session',document.getElementById('session').value);fd.append('speaker',document.getElementById('speaker').value);fd.append('note',document.getElementById('note').value);
 for(const f of files){const row=document.createElement('div');row.className='item';row.innerHTML='<img alt=""><span>Shrinking…</span>';log.prepend(row);rows.push(row);
 try{const r=await shrink(f,document.getElementById('dense').checked);row.querySelector('img').src=URL.createObjectURL(r.blob);
 row.querySelector('span').textContent=(f.size/1e6).toFixed(1)+' MB → '+Math.round(r.blob.size/1024)+' KB · '+r.px+' · '+r.detail+' detail · uploading…';
 fd.append('slide',r.blob,'slide.jpg');meta.push({px:r.px,detail:r.detail,original_bytes:r.original_bytes})}catch(e){row.querySelector('span').innerHTML='<span class="err">Could not read this photo: '+e.message+'</span>'}}
-fd.append('meta',JSON.stringify(meta));
+fd.append('meta',JSON.stringify(meta));document.getElementById('note').value='';
 try{const res=await fetch(location.pathname,{method:'POST',body:fd});const j=await res.json();
 rows.forEach((row,i)=>{const s=row.querySelector('span');if(j.ok)s.innerHTML=s.textContent.replace(' · uploading…','')+'<br><span class="ok">Saved as '+(j.saved[i]||'')+'</span>';else s.innerHTML='<span class="err">'+j.error+'</span>'})}
 catch(e){rows.forEach(r=>r.querySelector('span').innerHTML='<span class="err">Upload failed: '+e.message+'. Try again.</span>')}}
@@ -229,21 +267,33 @@ export const SLIDE_TOOLS: any[] = [
         path: { type: "string" },
         slide_type: { type: "string", description: `${SLIDE_TYPES.join(", ")}, or a coined lower_snake_case type` },
         new_type_rationale: { type: "string" },
-        title: { type: "string", description: "The slide's heading, verbatim" },
+        title: { type: "string", description: "The slide's heading, verbatim. If it has none, a short descriptive title in [brackets]." },
         core_message: { type: "string", description: "One sentence: the single point this slide makes. Your words." },
         tags: { type: "array", items: { type: "string" } },
-        transcript: { type: "string", description: "Every text element, verbatim, labeled by role (Kicker, H1, Sub, Body, Chart label, Footnote…). Mark [illegible] or [clipped]; never complete it." },
-        layout: { type: "string", description: "Rows and columns, what sits where, reading order, emphasis" },
+        layout: {
+          type: "string",
+          description:
+            "A layout designer's read of the slide: the composition type (flow diagram, 1 row × 3 columns, 2×2 matrix, timeline, hub-and-spoke, chart + callout…), the grid and proportions, hierarchy and visual weight, alignment and whitespace, color and emphasis, and the reading path. Enough to rebuild it.",
+        },
+        layout_diagram: {
+          type: "string",
+          description: "An ASCII sketch of the layout (boxes, arrows, columns), labeled with the real headings, so someone could reconstruct the slide. No code fences; they're added.",
+        },
+        transcript: {
+          type: "string",
+          description: "The content, as accurately as possible, in the slide's own reading order: every text element verbatim, labeled by role (Kicker, H1, Sub, Body, List, Card N, Stat, Chart label, Axis, Legend, Footnote, Source). Tables as markdown tables. Mark [illegible] or [clipped]; never complete it.",
+        },
         metrics: { type: "object", description: "{ label as printed: value as printed }" },
         claims_to_verify: { type: "array", items: { type: "string" } },
         alt: { type: "string", description: "One sentence for someone who can't see it, naming the numbers and people shown" },
+        field_notes: { type: "string", description: "What the person told you about this slide in chat (what was said, what they thought), exactly as they typed it. Added under Field notes, credited to them." },
         commentary: { type: "string", description: "2–4 sentences: why it matters to us, what's missing, how strong the evidence is. Your judgment, apart from the transcription." },
         transcription_fidelity: { type: "string", description: "verbatim, partial, or illegible" },
         speaker: { type: "string" },
         session: { type: "string" },
         event: { type: "string" },
       },
-      required: ["path", "core_message", "transcript"],
+      required: ["path", "title", "core_message", "layout", "transcript"],
     },
   },
 ];
@@ -254,7 +304,31 @@ const sidecar = (path: string) => {
   return { md: `${p}.md` };
 };
 
+SLIDE_TOOLS.push({
+  name: "add_field_note",
+  description:
+    "Add a field note to a captured slide: what someone heard or thought while it was up (\"said this is phase 2\", \"ask him about the PPA\"). Kept exactly as typed under the slide's Field notes, credited to this person. Any teammate can add one.",
+  inputSchema: {
+    type: "object",
+    properties: { path: { type: "string", description: "slides/<session>/NN.md" }, note: { type: "string" }, event: { type: "string" } },
+    required: ["path", "note"],
+  },
+});
+
 export const SLIDE_HANDLERS: Record<string, Handler> = {
+  async add_field_note(args, env, person) {
+    const { md } = sidecar(args.path);
+    if (!String(args?.note ?? "").trim()) throw new Error("A field note needs some text.");
+    return write(env, ev(args, env), person, `field note: ${md}`, async (ws) => {
+      const current = await read(ws, md);
+      if (current === null) throw new Error(`No slide at ${md}. List them with slides.`);
+      const t = now(env);
+      const { front, order, body } = parseFront(current);
+      await ws.fs.promises.writeFile(`${DIR}/${md}`, `${renderFront(front, order)}${withFieldNotes(body, [fieldLine(t.stamp, person.name, String(args.note))])}`);
+      return { paths: [md], summary: `Field note added to ${md}.` };
+    });
+  },
+
   async slide_capture_link(args, env, person) {
     const key = Object.entries(people(env)).find(([, p]) => p.email === person.email)?.[0];
     if (!key) throw new Error("Couldn't find this connector's key.");
@@ -276,7 +350,7 @@ export const SLIDE_HANDLERS: Record<string, Handler> = {
       const { front } = parseFront((await read(ws, p)) ?? "");
       if (args?.needs_notes && front.status !== "needs-notes") continue;
       const folder = p.slice(0, p.lastIndexOf("/"));
-      const line = `- ${p} · ${front.status === "needs-notes" ? "needs notes" : `${front.slide_type || "?"}: ${front.core_message}`} · ${front.captured_by}${front.image_kb ? ` · ${front.image_kb} KB` : ""}`;
+      const line = `- ${p} · ${front.status === "needs-notes" ? "needs notes" : `${front.title || front.slide_type || "?"}: ${front.core_message}`} · ${front.captured_by}${front.image_kb ? ` · ${front.image_kb} KB` : ""}`;
       groups.set(folder, [...(groups.get(folder) ?? []), line]);
     }
     if (!groups.size) return args?.needs_notes ? "Every captured slide has notes." : "No slides captured yet. slide_capture_link gives the camera page.";
@@ -306,36 +380,46 @@ export const SLIDE_HANDLERS: Record<string, Handler> = {
       const t = now(env);
       const { front, order, body } = parseFront(current);
       const metrics = args.metrics && typeof args.metrics === "object" ? Object.entries(args.metrics) : [];
+      const title = String(args.title ?? "").trim();
+      const first = front.status === "needs-notes";
+      // A first write gets ## sections; another take nests them one level down.
+      const h = first ? "##" : "###";
       const sections = [
-        args.title ? `**Title:** ${args.title}` : null,
-        `**Core message:** ${String(args.core_message).trim()}`,
-        `### Transcript (${fidelity})\n\n${String(args.transcript).trim()}`,
-        args.layout ? `### Layout\n\n${String(args.layout).trim()}` : null,
-        metrics.length ? `### Metrics (as printed)\n\n${metrics.map(([k, v]) => `- ${k}: ${v}`).join("\n")}` : null,
-        Array.isArray(args.claims_to_verify) && args.claims_to_verify.length ? `### Claims to verify\n\n${args.claims_to_verify.map((c: string) => `- ${c}`).join("\n")}` : null,
-        args.alt ? `### Alt text\n\n${String(args.alt).trim()}` : null,
-        args.commentary ? `### Commentary (${person.name}'s read, not the slide's)\n\n${String(args.commentary).trim()}` : null,
+        `${h} Layout\n\n${String(args.layout).trim()}${args.layout_diagram ? `\n\n\`\`\`text\n${String(args.layout_diagram).replace(/^\n+|\s+$/g, "")}\n\`\`\`` : ""}`,
+        `${h} Content${fidelity === "verbatim" ? "" : ` (${fidelity})`}\n\n${String(args.transcript).trim()}`,
+        metrics.length ? `${h} Metrics (as printed)\n\n${metrics.map(([k, v]) => `- ${k}: ${v}`).join("\n")}` : null,
+        Array.isArray(args.claims_to_verify) && args.claims_to_verify.length ? `${h} Claims to verify\n\n${args.claims_to_verify.map((c: string) => `- ${c}`).join("\n")}` : null,
+        args.alt ? `${h} Alt text\n\n${String(args.alt).trim()}` : null,
+        args.commentary ? `${h} Commentary (${person.name}'s read, not the slide's)\n\n${String(args.commentary).trim()}` : null,
         args.new_type_rationale ? `_New slide type \`${type}\`: ${args.new_type_rationale}_` : null,
       ]
         .filter(Boolean)
         .join("\n\n");
 
-      const first = front.status === "needs-notes";
+      let text: string;
       if (first) {
         Object.assign(front, {
-          status: "noted",
-          slide_type: type,
+          title,
           core_message: String(args.core_message).trim(),
+          slide_type: type,
+          status: "noted",
           transcription_fidelity: fidelity,
           tags: Array.isArray(args.tags) ? args.tags.join(", ") : front.tags ?? "",
           noted_by: person.name,
+          noted_at: t.iso,
         });
         if (!front.speaker && args.speaker) front.speaker = String(args.speaker);
         if (!front.session && args.session) front.session = String(args.session);
+        const nn = md.slice(md.lastIndexOf("/") + 1, -3);
+        const head = `# ${title || `Slide ${nn}`}\n\n> ${front.core_message}\n\n![${String(args.alt || title || `Slide ${nn}`).replace(/[\[\]]/g, "")}](${front.image_url})`;
+        const kept = fieldNotes(body);
+        if (args.field_notes) kept.push(fieldLine(t.stamp, person.name, String(args.field_notes), "via chat"));
+        text = `${renderFront(front, order)}\n${withFieldNotes(`${head}\n\n${sections}\n`, kept)}`;
+      } else {
+        const base = args.field_notes ? withFieldNotes(body, [fieldLine(t.stamp, person.name, String(args.field_notes), "via chat")]) : body;
+        text = `${renderFront(front, order)}${base.replace(/\s*$/, "\n\n")}## Another take · ${t.stamp} · ${person.name}\n\n${title ? `**Title:** ${title}\n\n` : ""}**Core message:** ${String(args.core_message).trim()}\n\n${sections}\n`;
       }
-      const block = first ? `## Notes · ${t.stamp} · ${person.name}\n\n${sections}\n` : `## Another take · ${t.stamp} · ${person.name}\n\n${sections}\n`;
-      const keep = first ? body.replace(/\n_Captured by[^\n]*Notes pending[^\n]*_\n?/, "\n") : body;
-      await ws.fs.promises.writeFile(`${DIR}/${md}`, `${renderFront(front, order)}${keep.replace(/\s*$/, "\n\n")}${block}`);
+      await ws.fs.promises.writeFile(`${DIR}/${md}`, text);
       const paths = [md];
 
       // The session's running narrative: one line per slide, in capture order.
@@ -347,7 +431,7 @@ export const SLIDE_HANDLERS: Record<string, Handler> = {
         const head = existing
           ? existing.replace(/\s*$/, "\n")
           : `# ${front.session || folder.split("/").pop()}\n\n${front.speaker ? `**Speaker:** ${front.speaker}\n\n` : ""}The talk, slide by slide, as the team captured it.\n\n`;
-        await ws.fs.promises.writeFile(`${DIR}/${index}`, `${head}- **${nn}** · ${type} · ${String(args.core_message).trim()} ([image](${front.image_url}), [notes](${nn}.md))\n`);
+        await ws.fs.promises.writeFile(`${DIR}/${index}`, `${head}- **${nn}** · ${title || type} · ${String(args.core_message).trim()} ([image](${front.image_url}), [notes](${nn}.md))\n`);
         paths.push(index);
       }
       return { paths, summary: `${first ? "Notes written" : "Another take added"} for ${md}.` };
