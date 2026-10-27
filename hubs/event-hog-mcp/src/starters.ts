@@ -31,6 +31,37 @@ const STATUSES = ["angle", "outline", "draft", "ready", "posted", "dropped"];
 // for the person. A draft can override it.
 const DEFAULT_VOICE: Record<string, string> = { blog: "company", linkedin: "personal", thread: "personal", tweet: "personal" };
 
+// X counts every link as 23 characters, whatever its length.
+const xLength = (t: string) => t.replace(/https?:\/\/\S+/g, "x".repeat(23)).length;
+const X_LIMIT = 280;
+
+// Number a tweetstorm 1/N … N/N and flag any post over the limit.
+function renderPosts(posts: string[]): { text: string; over: number[] } {
+  const n = posts.length;
+  const over: number[] = [];
+  const text = posts
+    .map((p, i) => {
+      const post = n > 1 ? `${p.trim()} ${i + 1}/${n}` : p.trim();
+      const len = xLength(post);
+      if (len > X_LIMIT) over.push(i + 1);
+      return `**${n > 1 ? `${i + 1}/${n}` : "Post"}** (${len}/${X_LIMIT}${len > X_LIMIT ? " ⚠ over" : ""})\n\n${post}`;
+    })
+    .join("\n\n---\n\n");
+  return { text, over };
+}
+
+// A speaker's handles, from their saved profile (augment-speakers-panelists).
+// Only what research actually found; never constructed from the name.
+async function speakerHandles(ws: Workspace, name: string): Promise<{ x: string; linkedin: string; profile: string }> {
+  const want = slug(name);
+  const file = (await walk(ws, "speakers")).find((p) => p === `speakers/${want}.md` || p.startsWith(`speakers/${want}--`));
+  if (!file) return { x: "", linkedin: "", profile: "" };
+  const text = (await read(ws, file)) ?? "";
+  const x = text.match(/(?:x|twitter)\.com\/(?!intent|share|home|i\/|search)([A-Za-z0-9_]{1,15})\b/i)?.[1] ?? "";
+  const linkedin = text.match(/https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s)>\]]+/i)?.[0] ?? "";
+  return { x: x ? `@${x}` : "", linkedin, profile: file };
+}
+
 function cleanPath(p: unknown): string {
   const path = String(p ?? "").replace(/^\/+/, "");
   if (!path.startsWith(`${DRAFTS}/`) || path.split("/").some((x) => x === ".." || x === ".git")) throw new Error(`Not a draft path: ${p}`);
@@ -57,9 +88,9 @@ function keys(front: Front): Set<string> {
 // still gets the cue at the moment it matters.
 export const STARTER_NUDGES: Record<string, string> = {
   save_speaker_profile:
-    "Starters: anticipate this session now. Flash cards for its likely vocabulary (save_flash_cards), 2–3 questions to ask, and post angles with [gaps] (save_draft). Load parallel-content-generation-starters if you haven't, and get_config it for voices.",
+    "Starters: anticipate this session now. Flash cards for its likely vocabulary (save_flash_cards), 2–3 questions to ask, and post angles with [gaps] (save_draft with speaker set, which looks up their handle). During the session, live posts per references/live-posting.md. Load parallel-content-generation-starters if you haven't, and get_config it for voices.",
   add_note:
-    "Starters: if this note has jargon, add flash cards; if it feeds an open draft (drafts), add_to_draft with the note as the source. Keep it to a line or two.",
+    "Starters: if this note has jargon, add flash cards; if it feeds an open draft (drafts), add_to_draft with the note as the source. If it's from a live session with a point worth sharing, offer one live post (quote only exact words, else paraphrase; the speaker's real handle; a specific compliment) per references/live-posting.md, and queue other nuggets for a tweetstorm. Keep it to a line or two.",
   log_contact:
     "Starters: add flash cards for any unfamiliar terms in the note. Don't put a private conversation into a post draft unless the note says it's shareable.",
 };
@@ -123,7 +154,12 @@ STARTER_TOOLS.push(
       properties: {
         kind: { type: "string", description: KINDS.join(", ") },
         title: { type: "string", description: "Working title or hook" },
-        body: { type: "string", description: "The draft, outline, or angle, with [gaps] for unknowns" },
+        body: { type: "string", description: "The draft, outline, or angle, with [gaps] for unknowns. For tweets and threads you can send posts instead." },
+        posts: {
+          type: "array",
+          items: { type: "string" },
+          description: "For a tweet or thread: one string per post, without numbering. The server numbers a tweetstorm 1/N … N/N and counts characters (X: 280, links count as 23).",
+        },
         voice: { type: "string", description: "company or personal. Defaults by kind: blog → company, others → personal" },
         status: { type: "string", description: "angle, outline, or draft (default angle)" },
         platform: { type: "string", description: "e.g. X, LinkedIn, company blog" },
@@ -132,7 +168,7 @@ STARTER_TOOLS.push(
         from: { type: "array", items: { type: "string" }, description: "Workspace files it draws on (notes/…, speakers/…)" },
         event: { type: "string" },
       },
-      required: ["kind", "title", "body"],
+      required: ["kind", "title"],
     },
   },
   {
@@ -144,6 +180,7 @@ STARTER_TOOLS.push(
       properties: {
         path: { type: "string", description: "drafts/… as listed by drafts" },
         text: { type: "string" },
+        posts: { type: "array", items: { type: "string" }, description: "With mode version, for a tweet or thread: the posts, unnumbered; the server numbers and counts them" },
         mode: { type: "string", description: "material or version" },
         section: { type: "string", description: "For material: which section it belongs under" },
         from: { type: "string", description: "The note or file it came from" },
@@ -169,7 +206,8 @@ export const STARTER_HANDLERS: Record<string, Handler> = {
   async save_draft(args, env, person) {
     const kind = slug(args?.kind ?? "");
     if (!KINDS.includes(kind)) throw new Error(`kind must be one of ${KINDS.join(", ")}.`);
-    if (!args?.title || !args?.body) throw new Error("A draft needs a title and a body.");
+    const posts = Array.isArray(args?.posts) ? args.posts.map(String).filter((p: string) => p.trim()) : [];
+    if (!args?.title || (!args?.body && !posts.length)) throw new Error("A draft needs a title and a body (or posts).");
     const voice = ["company", "personal"].includes(args.voice) ? args.voice : DEFAULT_VOICE[kind];
     const status = ["angle", "outline", "draft"].includes(args.status) ? args.status : "angle";
     return write(env, ev(args, env), person, `draft (${kind}, ${voice}): ${args.title}`, async (ws) => {
@@ -188,9 +226,22 @@ export const STARTER_HANDLERS: Record<string, Handler> = {
         voice_of: voice === "personal" ? person.name : "",
         created_at: t.iso,
       };
-      const body = `# ${args.title}\n\n## Version 1 · ${t.stamp} · ${person.name}\n\n${String(args.body).trim()}\n\n## Material\n`;
+      const handles = args.speaker ? await speakerHandles(ws, String(args.speaker)) : null;
+      if (handles) Object.assign(front, { mention_x: handles.x, mention_linkedin: handles.linkedin });
+      const rendered = posts.length ? renderPosts(posts) : null;
+      const content = [args.body ? String(args.body).trim() : "", rendered?.text ?? ""].filter(Boolean).join("\n\n");
+      const body = `# ${args.title}\n\n## Version 1 · ${t.stamp} · ${person.name}\n\n${content}\n\n## Material\n`;
       await ws.fs.promises.writeFile(`${DIR}/${path}`, `${renderFront(front, Object.keys(front))}\n${body}`);
-      return { paths: [path], summary: `Draft started (${kind}, ${voice} voice, ${status}): ${path}. Nothing is posted.` };
+      const notes = [
+        rendered ? `${posts.length} post(s)${rendered.over.length ? `; over ${X_LIMIT} characters: ${rendered.over.join(", ")}. Tighten those` : ", all within X's limit"}.` : "",
+        handles
+          ? handles.x
+            ? `${args.speaker} is ${handles.x} on X (from ${handles.profile}).${handles.linkedin ? ` LinkedIn: ${handles.linkedin} (tag by name when posting there).` : ""}`
+            : `No X handle on file for ${args.speaker}${handles.profile ? ` (checked ${handles.profile})` : " (no speaker profile yet; augment-speakers-panelists can find one)"}. Name them in plain text; never guess a handle.`
+          : "",
+      ].filter(Boolean);
+      const show = rendered ? `\n\nThe posts, ready for the person's artifact or markdown view:\n\n${rendered.text}` : "";
+      return { paths: [path], summary: `Draft started (${kind}, ${voice} voice, ${status}): ${path}. Nothing is posted.${notes.length ? `\n${notes.join("\n")}` : ""}${show}` };
     });
   },
 
@@ -199,6 +250,11 @@ export const STARTER_HANDLERS: Record<string, Handler> = {
     const status = args?.status ? slug(args.status) : "";
     if (status && !STATUSES.includes(status)) throw new Error(`status must be one of ${STATUSES.join(", ")}.`);
     if (status === "posted" && !args?.posted_url) throw new Error("A draft is marked posted only after the person has posted it themselves. Ask them for the link and pass it as posted_url.");
+    const posts = Array.isArray(args?.posts) ? args.posts.map(String).filter((p: string) => p.trim()) : [];
+    const rendered = posts.length ? renderPosts(posts) : null;
+    if (rendered) {
+      args = { ...args, mode: "version", text: [args.text ? String(args.text).trim() : "", rendered.text].filter(Boolean).join("\n\n") };
+    }
     if (!args?.text && !status) throw new Error("Give text to add, a status, or both.");
     return write(env, ev(args, env), person, `draft: ${path}${status ? ` → ${status}` : ""}`, async (ws) => {
       const current = await read(ws, path);
@@ -222,7 +278,10 @@ export const STARTER_HANDLERS: Record<string, Handler> = {
       if (status) front.status = status;
       if (status === "posted") front.posted_url = String(args.posted_url);
       await ws.fs.promises.writeFile(`${DIR}/${path}`, `${renderFront(front, order)}${next.startsWith("\n") ? "" : "\n"}${next}`);
-      return { paths: [path], summary: `Draft updated: ${path}${status ? ` (now ${status})` : ""}.` };
+      const show = rendered
+        ? `\n${rendered.over.length ? `Over ${X_LIMIT} characters: post(s) ${rendered.over.join(", ")}. Tighten them.` : "All posts within X's limit."}\n\nThe posts, ready for the person's artifact or markdown view:\n\n${rendered.text}`
+        : "";
+      return { paths: [path], summary: `Draft updated: ${path}${status ? ` (now ${status})` : ""}.${show}` };
     });
   },
 
