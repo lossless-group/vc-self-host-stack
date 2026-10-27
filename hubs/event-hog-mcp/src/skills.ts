@@ -110,6 +110,11 @@ export const SKILL_TOOLS = [
         why: { type: "string", description: "One line: why they matter for this event" },
         identity_confidence: { type: "string", description: "high, medium, or low" },
         socials: { type: "array", items: { type: "object", properties: { platform: { type: "string" }, url: { type: "string" } }, required: ["url"] } },
+        organization_socials: {
+          type: "array",
+          description: "The organization's own accounts (LinkedIn company page, X, YouTube…), found and confirmed, for tagging it in posts",
+          items: { type: "object", properties: { platform: { type: "string" }, url: { type: "string" } }, required: ["url"] },
+        },
         features: {
           type: "array",
           items: { type: "object", properties: { date: { type: "string" }, outlet: { type: "string" }, title: { type: "string" }, url: { type: "string" }, why: { type: "string" } }, required: ["url"] },
@@ -201,6 +206,7 @@ export const SKILL_HANDLERS: Record<string, Handler> = {
     const path = `speakers/${args.organization ? `${nameSlug}--${slug(args.organization)}` : nameSlug}.md`;
     const groups: [string, string, Link[]][] = [
       ["Social", "has_social", links(args.socials)],
+      ["Organization", "org_has_social", links(args.organization_socials)],
       ["Features", "featured_in", links(args.features)],
       ["Mentions", "mentioned_in", links(args.mentions)],
       ["Video", "has_video", links(args.videos)],
@@ -220,7 +226,7 @@ export const SKILL_HANDLERS: Record<string, Handler> = {
         added = fresh.flatMap(([, pred, items]) => items.map((i) => [pred, i] as [string, Link]));
 
         const line = (label: string, i: Link) =>
-          label === "Social"
+          label === "Social" || label === "Organization"
             ? `- ${i.platform ?? "link"}: ${i.url}`
             : label === "Video"
               ? `- ${i.date ?? "(undated)"} · ${i.title ?? ""} · ${i.channel ?? ""}${i.length ? ` · ${i.length}` : ""} · ${i.url}`
@@ -278,7 +284,13 @@ export const SKILL_HANDLERS: Record<string, Handler> = {
           env.CRM.prepare(
             "INSERT INTO observations (id, subject_type, subject_id, predicate, object, source, observed_at, observed_by, event_instance_id) VALUES (?, 'person', ?, ?, ?, ?, ?, ?, ?)",
           ).bind(crypto.randomUUID(), personId, predicate, object, source, at, person.name, instanceId);
-        const stmts = added.map(([pred, i]) => obs(pred, String(i.url), String(i.url)));
+        const orgObs = (object: string) =>
+          env.CRM.prepare(
+            "INSERT INTO observations (id, subject_type, subject_id, predicate, object, source, observed_at, observed_by, event_instance_id) VALUES (?, 'organization', ?, 'has_social', ?, ?, ?, ?, ?)",
+          ).bind(crypto.randomUUID(), orgId, object, object, at, person.name, instanceId);
+        const stmts = added
+          .filter(([pred]) => pred !== "org_has_social" || orgId)
+          .map(([pred, i]) => (pred === "org_has_social" ? orgObs(String(i.url)) : obs(pred, String(i.url), String(i.url))));
         if (args.session) stmts.push(obs("speaker_at", String(args.session), `event-hog:${event}@${oid.slice(0, 12)}:${path}`));
         if (stmts.length) await env.CRM.batch(stmts);
         return `agnostic-crm: ${stmts.length} observation(s) recorded for ${args.name}.`;

@@ -50,16 +50,47 @@ function renderPosts(posts: string[]): { text: string; over: number[] } {
   return { text, over };
 }
 
-// A speaker's handles, from their saved profile (augment-speakers-panelists).
-// Only what research actually found; never constructed from the name.
-async function speakerHandles(ws: Workspace, name: string): Promise<{ x: string; linkedin: string; profile: string }> {
+// A speaker's and their organization's accounts, from the saved profile
+// (augment-speakers-panelists): Social sections are the person's, Organization
+// sections the organization's. Only what research found; never constructed.
+type Tags = { x: string; linkedin: string; org: string; org_x: string; org_linkedin: string; profile: string };
+async function speakerHandles(ws: Workspace, name: string): Promise<Tags> {
   const want = slug(name);
+  const empty: Tags = { x: "", linkedin: "", org: "", org_x: "", org_linkedin: "", profile: "" };
   const file = (await walk(ws, "speakers")).find((p) => p === `speakers/${want}.md` || p.startsWith(`speakers/${want}--`));
-  if (!file) return { x: "", linkedin: "", profile: "" };
+  if (!file) return empty;
   const text = (await read(ws, file)) ?? "";
-  const x = text.match(/(?:x|twitter)\.com\/(?!intent|share|home|i\/|search)([A-Za-z0-9_]{1,15})\b/i)?.[1] ?? "";
-  const linkedin = text.match(/https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s)>\]]+/i)?.[0] ?? "";
-  return { x: x ? `@${x}` : "", linkedin, profile: file };
+  const section = (label: string) =>
+    [...text.matchAll(new RegExp(`#### ${label}\\n([\\s\\S]*?)(?=\\n#{1,4} |$)`, "g"))].map((m) => m[1]).join("\n");
+  const xOf = (t: string) => t.match(/(?:x|twitter)\.com\/(?!intent|share|home|i\/|search)([A-Za-z0-9_]{1,15})\b/i)?.[1] ?? "";
+  const person = section("Social");
+  const org = section("Organization");
+  const x = xOf(person);
+  const ox = xOf(org);
+  return {
+    x: x ? `@${x}` : "",
+    linkedin: person.match(/https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s)>\]]+/i)?.[0] ?? "",
+    // Profiles open "# Name", then "Title, Organization" when either is known.
+    org: /^[^#*\n][^\n]*$/.test(text.split("\n")[2] ?? "") ? (text.split("\n")[2].split(", ").pop() ?? "").trim() : "",
+    org_x: ox ? `@${ox}` : "",
+    org_linkedin: org.match(/https?:\/\/(?:www\.)?linkedin\.com\/(?:company|school|showcase)\/[^\s)>\]]+/i)?.[0] ?? "",
+    profile: file,
+  };
+}
+
+// What to show for tagging: X handles to use in posts, LinkedIn pages to open
+// (LinkedIn tags by typing @Name, so the names matter as much as the links).
+function tagLines(speaker: string, h: Tags): string {
+  if (!h.profile) return `No speaker profile for ${speaker} yet, so no handles or LinkedIn pages on file (augment-speakers-panelists can find them). Name them in plain text; never guess a handle.`;
+  const org = h.org || "their organization";
+  return [
+    `Tag ${speaker} (from ${h.profile}):`,
+    `- X: ${h.x || "no handle on file; name them in plain text"}`,
+    `- LinkedIn: ${h.linkedin || "no profile on file"}${h.linkedin ? ` (in a LinkedIn post, type @${speaker})` : ""}`,
+    `Tag ${org}:`,
+    `- X: ${h.org_x || "no handle on file"}`,
+    `- LinkedIn: ${h.org_linkedin || "no company page on file"}${h.org_linkedin ? ` (type @${org})` : ""}`,
+  ].join("\n");
 }
 
 function cleanPath(p: unknown): string {
@@ -227,18 +258,20 @@ export const STARTER_HANDLERS: Record<string, Handler> = {
         created_at: t.iso,
       };
       const handles = args.speaker ? await speakerHandles(ws, String(args.speaker)) : null;
-      if (handles) Object.assign(front, { mention_x: handles.x, mention_linkedin: handles.linkedin });
+      if (handles)
+        Object.assign(front, {
+          mention_x: handles.x,
+          mention_linkedin: handles.linkedin,
+          org_mention_x: handles.org_x,
+          org_linkedin: handles.org_linkedin,
+        });
       const rendered = posts.length ? renderPosts(posts) : null;
       const content = [args.body ? String(args.body).trim() : "", rendered?.text ?? ""].filter(Boolean).join("\n\n");
       const body = `# ${args.title}\n\n## Version 1 · ${t.stamp} · ${person.name}\n\n${content}\n\n## Material\n`;
       await ws.fs.promises.writeFile(`${DIR}/${path}`, `${renderFront(front, Object.keys(front))}\n${body}`);
       const notes = [
         rendered ? `${posts.length} post(s)${rendered.over.length ? `; over ${X_LIMIT} characters: ${rendered.over.join(", ")}. Tighten those` : ", all within X's limit"}.` : "",
-        handles
-          ? handles.x
-            ? `${args.speaker} is ${handles.x} on X (from ${handles.profile}).${handles.linkedin ? ` LinkedIn: ${handles.linkedin} (tag by name when posting there).` : ""}`
-            : `No X handle on file for ${args.speaker}${handles.profile ? ` (checked ${handles.profile})` : " (no speaker profile yet; augment-speakers-panelists can find one)"}. Name them in plain text; never guess a handle.`
-          : "",
+        handles ? tagLines(String(args.speaker), handles) : "",
       ].filter(Boolean);
       const show = rendered ? `\n\nThe posts, ready for the person's artifact or markdown view:\n\n${rendered.text}` : "";
       return { paths: [path], summary: `Draft started (${kind}, ${voice} voice, ${status}): ${path}. Nothing is posted.${notes.length ? `\n${notes.join("\n")}` : ""}${show}` };
