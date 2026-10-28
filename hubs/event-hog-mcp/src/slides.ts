@@ -47,7 +47,7 @@ export async function captureToken(key: string): Promise<string> {
   return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
 }
 
-async function personForToken(env: Env, token: string): Promise<{ key: string; person: Person } | null> {
+export async function personForToken(env: Env, token: string): Promise<{ key: string; person: Person } | null> {
   for (const [key, person] of Object.entries(people(env))) if ((await captureToken(key)) === token) return { key, person };
   return null;
 }
@@ -113,6 +113,58 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(s);
 }
 
+export interface SlideImage {
+  bytes: Uint8Array;
+  contentType: string;
+  ext: string;
+  meta?: { px?: string; detail?: string; original_bytes?: number };
+}
+
+// Put slide images on the image host and write each one's notes stub, numbered
+// after the slides already in the session. Shared by the capture page and
+// upload links; runs inside a write(), so a retried push re-numbers cleanly.
+export async function addSlides(
+  env: Env,
+  ws: Workspace,
+  person: Person,
+  event: string,
+  ctx: { session: string; speaker: string; note: string },
+  images: SlideImage[],
+  origin: string,
+): Promise<{ paths: string[]; summary: string }> {
+  const t = now(env);
+  const folder = folderFor(ctx.session, t.date);
+  const taken = (await walk(ws, folder)).filter((p) => /\/\d+\.md$/.test(p)).length;
+  const paths: string[] = [];
+  for (const [i, img] of images.entries()) {
+    const nn = String(taken + i + 1).padStart(2, "0");
+    const key = `${event}/${folder}/${nn}-${crypto.randomUUID().slice(0, 12)}.${img.ext}`;
+    await env.MEDIA.put(key, img.bytes, { httpMetadata: { contentType: img.contentType }, customMetadata: { captured_by: person.name, event } });
+    const imageUrl = `${env.PUBLIC_URL || origin}/media/${key}`;
+    const base = `${folder}/${nn}`;
+    const m = img.meta ?? {};
+    const front: Front = {
+      title: "",
+      core_message: "",
+      slide_type: "",
+      speaker: ctx.speaker,
+      session: ctx.session,
+      captured_by: person.name,
+      captured_at: t.iso,
+      status: "needs-notes",
+      image_url: imageUrl,
+      image_px: m.px ?? "",
+      image_kb: String(Math.round(img.bytes.length / 1024)),
+      detail: m.detail ?? "",
+      original_kb: m.original_bytes ? String(Math.round(m.original_bytes / 1024)) : "",
+      transcription_fidelity: "",
+    };
+    await ws.fs.promises.writeFile(`${DIR}/${base}.md`, `${renderFront(front, Object.keys(front))}\n# Slide ${nn}${ctx.session ? ` · ${ctx.session}` : ""}\n\n![Slide ${nn}](${imageUrl})\n\n${ctx.note ? `${FIELD}\n\n${fieldLine(t.stamp, person.name, ctx.note)}\n\n` : ""}_Captured by ${person.name}, ${t.stamp}. Notes pending: ask Claude to "write up my slides"._\n`);
+    paths.push(`${base}.md`);
+  }
+  return { paths, summary: `Saved ${images.length} slide(s) to ${folder}/.` };
+}
+
 // ---------------------------------------------------------------- capture page
 
 export async function handleCapture(request: Request, env: Env, token: string): Promise<Response> {
@@ -140,40 +192,15 @@ export async function handleCapture(request: Request, env: Env, token: string): 
     const saved: string[] = [];
     const summary = await write(env, event, who.person, `slides: ${files.length} captured${session ? ` (${session})` : ""}`, async (ws) => {
       saved.length = 0;
-      const t = now(env);
-      const folder = folderFor(session, t.date);
-      const taken = (await walk(ws, folder)).filter((p) => /\/\d+\.md$/.test(p)).length;
-      const paths: string[] = [];
+      const images: SlideImage[] = [];
       for (const [i, file] of files.entries()) {
         const bytes = new Uint8Array(await file.arrayBuffer());
         if (bytes.length > MAX_BYTES) throw new Error(`A photo is ${(bytes.length / 1e6).toFixed(1)} MB after shrinking; the limit is ${MAX_BYTES / 1e6} MB.`);
-        const nn = String(taken + i + 1).padStart(2, "0");
-        const key = `${event}/${folder}/${nn}-${crypto.randomUUID().slice(0, 12)}.jpg`;
-        await env.MEDIA.put(key, bytes, { httpMetadata: { contentType: "image/jpeg" }, customMetadata: { captured_by: who.person.name, event } });
-        const imageUrl = `${env.PUBLIC_URL || new URL(request.url).origin}/media/${key}`;
-        const base = `${folder}/${nn}`;
-        const m = meta[i] ?? {};
-        const front: Front = {
-          title: "",
-          core_message: "",
-          slide_type: "",
-          speaker,
-          session,
-          captured_by: who.person.name,
-          captured_at: t.iso,
-          status: "needs-notes",
-          image_url: imageUrl,
-          image_px: m.px ?? "",
-          image_kb: String(Math.round(bytes.length / 1024)),
-          detail: m.detail ?? "",
-          original_kb: m.original_bytes ? String(Math.round(m.original_bytes / 1024)) : "",
-          transcription_fidelity: "",
-        };
-        await ws.fs.promises.writeFile(`${DIR}/${base}.md`, `${renderFront(front, Object.keys(front))}\n# Slide ${nn}${session ? ` · ${session}` : ""}\n\n![Slide ${nn}](${imageUrl})\n\n${note ? `${FIELD}\n\n${fieldLine(t.stamp, who.person.name, note)}\n\n` : ""}_Captured by ${who.person.name}, ${t.stamp}. Notes pending: ask Claude to "write up my slides"._\n`);
-        paths.push(`${base}.md`);
-        saved.push(`${base}.md`);
+        images.push({ bytes, contentType: "image/jpeg", ext: "jpg", meta: meta[i] });
       }
-      return { paths, summary: `Saved ${files.length} slide(s) to ${folder}/.` };
+      const out = await addSlides(env, ws, who.person, event, { session, speaker, note }, images, new URL(request.url).origin);
+      saved.push(...out.paths);
+      return out;
     });
     return Response.json({ ok: true, saved, summary });
   } catch (err: any) {
@@ -368,7 +395,8 @@ export const SLIDE_HANDLERS: Record<string, Handler> = {
     const obj = front.image_url ? await env.MEDIA.get(mediaKey(front.image_url)) : null;
     if (!obj) throw new Error(`${md} has no image on the image host (image_url: ${front.image_url || "none"}).`);
     const bytes = new Uint8Array(await obj.arrayBuffer());
-    return { content: [{ type: "image", data: toBase64(bytes), mimeType: "image/jpeg" }, { type: "text", text: `${md}\n\n${notes}` }] };
+    const mimeType = obj.httpMetadata?.contentType ?? "image/jpeg";
+    return { content: [{ type: "image", data: toBase64(bytes), mimeType }, { type: "text", text: `${md}\n\n${notes}` }] };
   },
 
   async save_slide_notes(args, env, person) {
