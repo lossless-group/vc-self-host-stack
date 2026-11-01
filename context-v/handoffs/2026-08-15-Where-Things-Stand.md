@@ -9,6 +9,7 @@ augmented_with:
   - Claude Code on Claude Opus 5
 semantic_version: 0.0.0.1
 status: Archived
+supersedes: "[[2026-08-08-Where-Things-Stand]]"
 tags:
   - Handoff
   - Plane

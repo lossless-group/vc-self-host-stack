@@ -21,7 +21,7 @@ tags:
   - Meeting-Notes
   - Granola
   - Confidentiality
-status: Open
+status: Draft
 type: Explorations
 ---
 

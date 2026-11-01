@@ -16,7 +16,7 @@ tags:
   - MCP
   - Client-Operations
   - FullStackVC
-status: Open
+status: Draft
 site_uuid: 07ee6d72-d3bb-486b-a661-789560f2d8f4
 hex_code: jz90sd
 date_authored_initial_draft: 2026-07-24

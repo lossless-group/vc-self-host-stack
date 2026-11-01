@@ -14,7 +14,7 @@ tags:
   - AI-Agent-Infrastructure
   - Multi-User
   - WhatsApp
-status: Open
+status: Draft
 site_uuid: 3d1c0747-5970-4409-9aa0-ecc95aa75534
 hex_code: v1jc9c
 date_authored_initial_draft: 2026-07-08

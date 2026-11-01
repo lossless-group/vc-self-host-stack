@@ -15,7 +15,7 @@ tags:
   - Nextcloud
   - Syncthing
   - Team-Collaboration
-status: Open
+status: Draft
 site_uuid: 9cca8c1b-2353-42cb-ad3f-37204e402daf
 hex_code: 2jtxtp
 date_authored_initial_draft: 2026-07-08

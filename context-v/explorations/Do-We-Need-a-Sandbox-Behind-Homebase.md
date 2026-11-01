@@ -19,7 +19,7 @@ tags:
   - Managed-Agents
   - Self-Host-Stack
   - AI-Agent-Infrastructure
-status: Open
+status: Draft
 site_uuid: 7ccba464-3ec2-4bb7-acb8-4a78d1c7aa93
 hex_code: 1lt6do
 date_authored_initial_draft: 2026-08-18

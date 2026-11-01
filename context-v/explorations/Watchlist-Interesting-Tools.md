@@ -11,7 +11,7 @@ semantic_version: 0.0.0.1
 tags:
   - Exploration
   - Watchlist
-status: Open
+status: Draft
 site_uuid: 430f6b9f-cd48-4eee-ab4e-11ea1d412aea
 hex_code: 0x2vkx
 date_authored_initial_draft: 2026-07-18

@@ -19,7 +19,7 @@ tags:
   - Interaction-Object
   - Timeline
   - Client-Privacy
-status: Open
+status: Draft
 site_uuid: c5905048-90bf-450c-8429-c6c2f7912367
 hex_code: hg1pn4
 date_authored_initial_draft: 2026-08-22
