@@ -11,7 +11,6 @@ semantic_version: 0.0.0.1
 tags:
   - Exploration
   - Watchlist
-  - Self-Host-Stack
 status: Open
 site_uuid: 430f6b9f-cd48-4eee-ab4e-11ea1d412aea
 hex_code: 0x2vkx

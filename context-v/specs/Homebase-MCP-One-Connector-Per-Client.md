@@ -15,8 +15,7 @@ tags:
   - MCP
   - Capability-Plane
   - Agent-Skills
-  - lossless.at
-  - Self-Host-Stack
+  - Lossless-At
 site_uuid: c5166dc9-157d-4f2f-b448-84e7d005f477
 hex_code: p7y02f
 date_authored_initial_draft: 2026-08-09

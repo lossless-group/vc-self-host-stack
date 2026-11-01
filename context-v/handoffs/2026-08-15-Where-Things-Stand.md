@@ -8,13 +8,13 @@ authors:
 augmented_with:
   - Claude Code on Claude Opus 5
 semantic_version: 0.0.0.1
-status: Draft
+status: Archived
 tags:
   - Handoff
   - Plane
   - Twenty
   - Postiz
-  - lossless.at
+  - Lossless-At
   - Changelog
 site_uuid: 9e7c297e-f875-49bf-8ca6-ff9f42ce5727
 hex_code: 45gjpc

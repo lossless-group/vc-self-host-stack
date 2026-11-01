@@ -9,14 +9,14 @@ authors:
 augmented_with:
   - Claude Code on Claude Opus 5
 semantic_version: 0.0.0.1
-status: Draft
+status: Active
 tags:
   - Handoff
   - Cal.diy
   - OAuth
   - Google-Cloud
   - Scheduling
-  - lossless.at
+  - Lossless-At
 site_uuid: c07d46f8-36eb-4cf4-9580-e9ad448755f0
 hex_code: 5889jb
 date_authored_initial_draft: 2026-08-23

@@ -3,7 +3,8 @@ title: "Papermark Self-Hosted Dataroom Deployment"
 lede: "Complete deployment specification for self-hosting Papermark as an open-source virtual data room for sharing investment memos, pitch decks, and due diligence documents."
 date_created: 2025-11-15
 date_modified: 2025-12-15
-status: Draft
+status: Shipped
+date_first_published: 2026-08-03
 category: Blueprints
 tags: [Papermark, Dataroom, Deployment, Railway, Self-Hosted]
 authors:

@@ -15,7 +15,6 @@ at_semantic_version: 0.0.0.1
 publish: true
 tags:
   - Exploration
-  - Self-Host-Stack
   - Speech-to-Text
   - Diarization
   - Transcription

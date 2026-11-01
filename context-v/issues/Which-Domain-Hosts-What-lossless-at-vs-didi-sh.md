@@ -12,8 +12,8 @@ status: Open
 tags:
   - Issue-Resolution
   - Domains
-  - lossless.at
-  - didi.sh
+  - Lossless-At
+  - Didi-Sh
   - DNS
   - Naming
 site_uuid: e7e11399-39df-42c9-a015-023710befc3f

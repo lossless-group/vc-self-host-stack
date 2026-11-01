@@ -1,8 +1,11 @@
 ---
 title: "lossless.at path-based homebases + /<client>/<service>/api gateway"
 date_created: 2026-08-02
-status: Open
-tags: [Decision, lossless.at, Homebase, Gateway, MCP, Portal]
+date_modified: 2026-08-18
+authors:
+  - Michael Staton
+status: Decided
+tags: [Decision, Lossless-At, Homebase, Gateway, MCP, Portal]
 site_uuid: 41823721-6ed5-4e74-ad59-67a42c55d210
 hex_code: hbsw0t
 date_authored_initial_draft: 2026-08-02

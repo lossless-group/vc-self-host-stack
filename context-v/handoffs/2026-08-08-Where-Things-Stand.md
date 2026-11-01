@@ -8,11 +8,12 @@ authors:
 augmented_with:
   - Claude Code on Claude Opus 5
 semantic_version: 0.0.0.1
-status: Draft
+status: Superseded
+superseded_by: "[[2026-08-15-Where-Things-Stand]]"
 tags:
   - Handoff
   - Outline
-  - lossless.at
+  - Lossless-At
   - Email
 site_uuid: 53e45e24-acc3-4fc6-8f82-80f60e199bc9
 hex_code: 9w60yj

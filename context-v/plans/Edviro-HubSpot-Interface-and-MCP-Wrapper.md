@@ -8,7 +8,7 @@ authors:
 augmented_with:
   - Claude Code on Claude Opus 5.5
 semantic_version: 0.0.0.1
-status: Draft
+status: Implementing
 tags:
   - Plan
   - Self-Host-Stack

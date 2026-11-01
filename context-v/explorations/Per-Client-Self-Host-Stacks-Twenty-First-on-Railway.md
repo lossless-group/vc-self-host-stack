@@ -10,7 +10,6 @@ augmented_with:
 semantic_version: 0.0.0.5
 tags:
   - Exploration
-  - Self-Host-Stack
   - Railway
   - Twenty-CRM
   - Secrets-Management

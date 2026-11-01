@@ -13,7 +13,7 @@ authors:
 augmented_with:
   - Claude Code on Claude Opus 5.5 (1M context)
 at_semantic_version: 0.0.0.1
-status: Signed-Off
+status: Decided
 decided_by:
   - Michael P. Staton
 date_decided: 2026-10-25

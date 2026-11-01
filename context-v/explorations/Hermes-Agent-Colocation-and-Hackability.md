@@ -11,7 +11,6 @@ semantic_version: 0.0.0.1
 tags:
   - Exploration
   - Hermes-Agent
-  - Self-Host-Stack
   - AI-Agent-Infrastructure
   - MCP
 status: Open

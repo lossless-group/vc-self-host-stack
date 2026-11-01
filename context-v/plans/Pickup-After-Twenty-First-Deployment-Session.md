@@ -8,11 +8,10 @@ authors:
 augmented_with:
   - Claude Code on Claude Fable 5
 semantic_version: 0.0.0.1
-status: Active
+status: Archived
 tags:
   - Plan
   - Handoff
-  - Self-Host-Stack
   - Twenty-CRM
   - Railway
 site_uuid: b27828ce-24da-4c10-8aa9-bbdbea255d19

@@ -9,7 +9,7 @@ augmented_with:
   - Claude Code on Claude Opus 4.8
   - Claude Code on Claude Opus 5
 semantic_version: 0.0.2.0
-status: Partially-Shipped
+status: Open
 date_first_published: 2026-08-06
 tags:
   - Issue-Resolution
@@ -18,7 +18,7 @@ tags:
   - Gateway
   - MCP
   - Reverse-Proxy
-  - lossless.at
+  - Lossless-At
 site_uuid: c736b2b7-86d5-40d7-8002-a74e50946386
 hex_code: 8tl9vg
 date_authored_initial_draft: 2026-08-09
