@@ -8,6 +8,7 @@ hex_code: hbsw0t
 date_authored_initial_draft: 2026-08-02
 date_authored_current_draft: 2026-08-02
 publish: true
+type: Decisions
 ---
 
 # lossless.at path-based homebases + `/<client>/<service>/api`

@@ -20,6 +20,7 @@ hex_code: w7jdux
 date_authored_initial_draft: 2026-08-09
 date_authored_current_draft: 2026-08-09
 publish: true
+type: Reminders
 ---
 
 # `railway config pull` does not pin database images

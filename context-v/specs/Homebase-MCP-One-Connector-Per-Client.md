@@ -22,6 +22,7 @@ hex_code: p7y02f
 date_authored_initial_draft: 2026-08-09
 date_authored_current_draft: 2026-08-20
 publish: true
+type: Specs
 ---
 
 # Homebase MCP — one connector per client

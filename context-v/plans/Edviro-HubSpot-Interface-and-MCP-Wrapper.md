@@ -22,6 +22,7 @@ hex_code: xbtmmi
 date_authored_initial_draft: 2026-10-25
 date_authored_current_draft: 2026-10-25
 publish: false
+type: Plans
 ---
 
 # Edviro: Interface with HubSpot, then Wrap It in Our Own MCP

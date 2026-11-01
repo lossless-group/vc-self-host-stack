@@ -1,0 +1,10 @@
+# Explorations
+
+* [Aggregating Historical Calendar Items for Lossless Twenty](Aggregate-Historical-Calendar-Items-for-Lossless-Twenty.md) - Started as 'should we deploy cal.diy' and ended somewhere else entirely — cal.diy deletes the past by design, Twenty's importer already backfills everything, and the thing actually worth building is a one-time ICS backfill that never touches OAuth.
+* [Do we need a sandbox behind homebase?](Do-We-Need-a-Sandbox-Behind-Homebase.md) - Homebase federates tools but stores nothing and runs nothing. The missing piece turns out to be two pieces — storage, which is already funded, and compute, which can wait.
+* [Replacing Granola with an Open-Source Transcription Stack](Exploring-Diarization-Voice-Transcription-w-OpenSource.md) - Transcription is solved and free. Knowing who was speaking is neither — and it's the half that makes a meeting-notes product feel good.
+* [Should Hermes Agent Co-Locate on the Same Host as TwentyCRM?](Hermes-Agent-Colocation-and-Hackability.md) - Colocation feels like it should mean 'automatic access' — the evidence says it doesn't, and the real value is elsewhere.
+* [Sharing One Hermes Agent Instance Across a 3-Person Client Team](Hermes-Agent-Multi-User-Team-Access.md) - Hermes Agent has no shipped multi-user mode — the gap is real, catalogued, and still open upstream.
+* [An Instantly-Synced Shared Folder for a 3-Person Team](Instantly-Synced-Team-Folder-Nextcloud-vs-Alternatives.md) - Nextcloud was the first name that came to mind — but the actual ask is pure instant file sync, and that's a different tool's specialty.
+* [Per-Client Self-Host Stacks, Twenty-First, on Railway](Per-Client-Self-Host-Stacks-Twenty-First-on-Railway.md) - One playbook, three tiers: managed client stacks on Railway, a hub page clients actually use, and a per-client remote MCP server that could grow into a full context plane.
+* [Watchlist — Interesting Tools Not Yet Sorted](Watchlist-Interesting-Tools.md) - A running catch-all for tools worth a second look, before we know whether they map to a self-host-stack category, a personal-workstation list, or nothing at all.

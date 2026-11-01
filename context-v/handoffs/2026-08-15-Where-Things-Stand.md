@@ -21,6 +21,7 @@ hex_code: 45gjpc
 date_authored_initial_draft: 2026-08-15
 date_authored_current_draft: 2026-08-15
 publish: false
+type: Handoffs
 ---
 
 # Where things stand

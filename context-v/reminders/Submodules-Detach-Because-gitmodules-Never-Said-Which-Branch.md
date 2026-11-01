@@ -21,6 +21,7 @@ hex_code: yqptwy
 date_authored_initial_draft: 2026-08-23
 date_authored_current_draft: 2026-08-23
 publish: true
+type: Reminders
 ---
 
 # Submodules detach because `.gitmodules` never said which branch

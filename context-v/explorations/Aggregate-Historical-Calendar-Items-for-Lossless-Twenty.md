@@ -25,6 +25,7 @@ hex_code: hg1pn4
 date_authored_initial_draft: 2026-08-22
 date_authored_current_draft: 2026-08-22
 publish: true
+type: Explorations
 ---
 
 # Aggregating Historical Calendar Items for Lossless Twenty

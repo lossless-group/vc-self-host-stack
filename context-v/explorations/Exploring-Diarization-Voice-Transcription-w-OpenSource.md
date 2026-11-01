@@ -23,6 +23,7 @@ tags:
   - Granola
   - Confidentiality
 status: Open
+type: Explorations
 ---
 
 # Replacing Granola with an Open-Source Transcription Stack

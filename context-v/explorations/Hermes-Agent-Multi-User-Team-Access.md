@@ -21,6 +21,7 @@ hex_code: v1jc9c
 date_authored_initial_draft: 2026-07-08
 date_authored_current_draft: 2026-07-08
 publish: true
+type: Explorations
 ---
 
 # Sharing One Hermes Agent Instance Across a 3-Person Client Team

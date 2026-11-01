@@ -25,6 +25,7 @@ hex_code: 1lt6do
 date_authored_initial_draft: 2026-08-18
 date_authored_current_draft: 2026-08-19
 publish: true
+type: Explorations
 ---
 
 # Do we need a sandbox behind homebase?

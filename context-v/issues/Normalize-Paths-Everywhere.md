@@ -24,6 +24,7 @@ hex_code: 8tl9vg
 date_authored_initial_draft: 2026-08-09
 date_authored_current_draft: 2026-08-09
 publish: true
+type: Issues
 ---
 
 # Normalize Paths Everywhere

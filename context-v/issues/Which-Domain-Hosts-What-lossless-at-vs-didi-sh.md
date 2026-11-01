@@ -21,6 +21,7 @@ hex_code: ox6bti
 date_authored_initial_draft: 2026-08-09
 date_authored_current_draft: 2026-08-09
 publish: true
+type: Issues
 ---
 
 # Which domain hosts what

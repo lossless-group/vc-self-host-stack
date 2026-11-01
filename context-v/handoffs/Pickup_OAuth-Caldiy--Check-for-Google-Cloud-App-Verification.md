@@ -22,6 +22,7 @@ hex_code: 5889jb
 date_authored_initial_draft: 2026-08-23
 date_authored_current_draft: 2026-08-23
 publish: false
+type: Handoffs
 ---
 
 # Pickup: Cal.diy OAuth verification

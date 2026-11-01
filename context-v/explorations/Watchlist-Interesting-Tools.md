@@ -18,6 +18,7 @@ hex_code: 0x2vkx
 date_authored_initial_draft: 2026-07-18
 date_authored_current_draft: 2026-07-18
 publish: true
+type: Explorations
 ---
 
 # Watchlist — Interesting Tools Not Yet Sorted

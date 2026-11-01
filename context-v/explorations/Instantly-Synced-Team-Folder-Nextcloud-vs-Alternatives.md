@@ -21,6 +21,7 @@ hex_code: 2jtxtp
 date_authored_initial_draft: 2026-07-08
 date_authored_current_draft: 2026-07-08
 publish: true
+type: Explorations
 ---
 
 # An Instantly-Synced Shared Folder for a 3-Person Team

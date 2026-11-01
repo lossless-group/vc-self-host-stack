@@ -21,6 +21,7 @@ hex_code: hs3569
 date_authored_initial_draft: 2026-08-18
 date_authored_current_draft: 2026-08-18
 publish: false
+type: Reminders
 ---
 
 # The goal is multi-tool functionality from one MCP server

@@ -20,6 +20,7 @@ hex_code: dch8d1
 date_authored_initial_draft: 2026-07-25
 date_authored_current_draft: 2026-07-25
 publish: false
+type: Plans
 ---
 
 # Pickup — After the Twenty-First Deployment Session
