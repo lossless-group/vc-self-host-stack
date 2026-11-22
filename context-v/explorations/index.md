@@ -7,4 +7,7 @@
 * [Sharing One Hermes Agent Instance Across a 3-Person Client Team](Hermes-Agent-Multi-User-Team-Access.md) - Hermes Agent has no shipped multi-user mode — the gap is real, catalogued, and still open upstream.
 * [An Instantly-Synced Shared Folder for a 3-Person Team](Instantly-Synced-Team-Folder-Nextcloud-vs-Alternatives.md) - Nextcloud was the first name that came to mind — but the actual ask is pure instant file sync, and that's a different tool's specialty.
 * [Per-Client Self-Host Stacks, Twenty-First, on Railway](Per-Client-Self-Host-Stacks-Twenty-First-on-Railway.md) - One playbook, three tiers: managed client stacks on Railway, a hub page clients actually use, and a per-client remote MCP server that could grow into a full context plane.
+* [Running the Latest and Greatest LLM Locally](<Running the latest and greatest LLM locally.md>) - Step-by-step guide for installing and configuring local LLMs—including Ollama, LiteLLM, Fabric, and Perplexica—for modern AI workflows and toolchains.
+* [Self-Hosting Multi-Site Analytics Platforms](<Self-Hosting Multi-Site Analytics Platforms.md>)
+* [Streamlining Deployment of Multiple Instances of Twenty CRM](Streamlining-Deployment-of-Multiple-Instances-of-Twenty-CRM.md)
 * [Watchlist — Interesting Tools Not Yet Sorted](Watchlist-Interesting-Tools.md) - A running catch-all for tools worth a second look, before we know whether they map to a self-host-stack category, a personal-workstation list, or nothing at all.
